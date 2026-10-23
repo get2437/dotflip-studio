@@ -267,11 +267,11 @@ function loadImage(url){return new Promise((resolve,reject)=>{const image=new Im
 async function imageAsset(file,maxSide=2048){
   if(file.size>LIMITS.fileBytes)throw new Error('画像は1枚32MBまでです。');
   if(!/^image\/(png|jpeg|webp|bmp|x-ms-bmp)$/.test(file.type))throw new Error('PNG / JPG / WebP / BMP の画像を選んでください。');
-  const url=URL.createObjectURL(file);try{
-    const image=await loadImage(url);if(image.naturalWidth*image.naturalHeight>25000000)throw new Error('画像が大きすぎます。2500万画素以下に縮小してください。');
+  // data: images work on static hosts whose img-src policy excludes blob: URLs.
+  const url=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('画像ファイルを読み取れませんでした。'));reader.readAsDataURL(file);});
+  const image=await loadImage(url);if(image.naturalWidth*image.naturalHeight>25000000)throw new Error('画像が大きすぎます。2500万画素以下に縮小してください。');
     const c=document.createElement('canvas'),scale=Math.min(1,maxSide/Math.max(image.naturalWidth,image.naturalHeight));c.width=Math.max(1,Math.round(image.naturalWidth*scale));c.height=Math.max(1,Math.round(image.naturalHeight*scale));c.getContext('2d').drawImage(image,0,0,c.width,c.height);
     return {bitmap:c,name:file.name,width:image.naturalWidth,height:image.naturalHeight};
-  }finally{URL.revokeObjectURL(url);}
 }
 async function importFiles(files){
   const list=[...files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));if(!list.length)return;

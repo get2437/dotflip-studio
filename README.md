@@ -4,7 +4,7 @@
 
 Pixel art and frame animation editor that runs in your browser. Import images or sprite sheets, edit pixels, and export looping GIFs. All image processing runs locally in the browser; no API key is required.
 
-**[Web版を開く — DOTFLIP Studio](https://get2437.github.io/dotflip-studio/)** · [ダウンロード版](https://github.com/get2437/dotflip-studio/releases/latest)
+**[Web版を開く — DOTFLIP Studio](https://imadokimatome.com/tools/dotflip/)** · [GitHub Pages版](https://get2437.github.io/dotflip-studio/) · [ダウンロード版](https://github.com/get2437/dotflip-studio/releases/latest)
 
 ![SURF STRIKE — DOTFLIPで作成した残像なしの戦闘アニメーション](docs/surf-strike.gif)
 
@@ -12,7 +12,7 @@ Pixel art and frame animation editor that runs in your browser. Import images or
 
 ## ブラウザですぐ使う
 
-[GitHub PagesのWeb版](https://get2437.github.io/dotflip-studio/)をChrome / Edgeなどの新しいブラウザで開くだけで使えます。Node.jsのインストール、GitHubへのログイン、APIキーは不要です。
+[いまどきまとめのWeb版](https://imadokimatome.com/tools/dotflip/)または[GitHub Pages版](https://get2437.github.io/dotflip-studio/)をChrome / Edgeなどの新しいブラウザで開くだけで使えます。Node.jsのインストール、GitHubへのログイン、APIキーは不要です。
 
 「完成サンプル『SURF STRIKE』を開く」で再生・編集を試すか、自分の画像を読み込んでドット絵とアニメーションを作成してください。GIFやPNG、プロジェクトJSONは手元の端末にダウンロードできます。
 
