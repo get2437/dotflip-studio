@@ -16,5 +16,5 @@
   "engines": { "node": ">=22" },
   "repository": { "type": "git", "url": "https://github.com/get2437/dotflip-studio.git" },
   "bugs": { "url": "https://github.com/get2437/dotflip-studio/issues" },
-  "homepage": "https://github.com/get2437/dotflip-studio#readme"
+  "homepage": "https://get2437.github.io/dotflip-studio/"
 }

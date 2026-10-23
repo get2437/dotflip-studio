@@ -4,11 +4,21 @@
 
 Pixel art and frame animation editor that runs in your browser. Import images or sprite sheets, edit pixels, and export looping GIFs. All image processing runs locally in the browser; no API key is required.
 
+**[Web版を開く — DOTFLIP Studio](https://get2437.github.io/dotflip-studio/)** · [ダウンロード版](https://github.com/get2437/dotflip-studio/releases/latest)
+
 ![SURF STRIKE — DOTFLIPで作成した残像なしの戦闘アニメーション](docs/surf-strike.gif)
 
 サンプルのキャラクター画像はAI生成です。開発にもAIを使用しています。画像の出自と利用条件は [ASSETS.md](ASSETS.md)、コードと同梱素材のライセンスは [LICENSE](LICENSE)、外部ライブラリの表示は [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) を参照してください。
 
-## ダウンロードして使う
+## ブラウザですぐ使う
+
+[GitHub PagesのWeb版](https://get2437.github.io/dotflip-studio/)をChrome / Edgeなどの新しいブラウザで開くだけで使えます。Node.jsのインストール、GitHubへのログイン、APIキーは不要です。
+
+「完成サンプル『SURF STRIKE』を開く」で再生・編集を試すか、自分の画像を読み込んでドット絵とアニメーションを作成してください。GIFやPNG、プロジェクトJSONは手元の端末にダウンロードできます。
+
+読み込んだ画像の処理と自動保存はブラウザ内で行います。自動保存は開いたURLとブラウザにひもづくため、別の端末へ移す場合やバックアップには「保存」でプロジェクトJSONを持ち出してください。
+
+## ダウンロードしてローカルで使う
 
 1. [Releases](https://github.com/get2437/dotflip-studio/releases/latest) から `dotflip-studio-v1.0.0.zip` をダウンロードして展開します。
 2. [Node.js](https://nodejs.org/) 22以降を用意します。
@@ -17,9 +27,9 @@ Pixel art and frame animation editor that runs in your browser. Import images or
 
 リリースZIPにはビルド済みの `dist/` が含まれます。ZIPからの起動では `npm ci` や外部通信は不要です。Chrome / Edgeなどの新しいブラウザを使用してください。
 
-## 起動
+## ソースからローカルで起動
 
-Node.js 22以降を使用します。
+ローカル起動と開発にはNode.js 22以降を使用します。Web版の利用には不要です。
 
 ```sh
 git clone https://github.com/get2437/dotflip-studio.git
@@ -75,6 +85,8 @@ npm run release:package
 ```
 
 `release:package` はビルド済みの `dist/` を含む配布ZIPとSHA-256チェックサムを `release/` に作成します。リポジトリには個人のサイトID・認証情報・作業画像・自動保存データを含めません。ビルドした `dist/` は任意の静的HTTPサーバーで配信できます。
+
+`main`への更新はGitHub ActionsでWindows / Linuxのテストを通過した後、ビルド済みの`dist/`をGitHub Pagesに自動公開します。プルリクエストではテストのみ実行します。
 
 `app/core.js` がDOMから独立した画像処理・コマ操作・JSON検証、`app/action.js` が透過スプライト抽出・戦闘シーン合成、`app/app.js` がUI、`app/export.js` がGIFとシート定義、`app/gif-worker.js` がGIFのバックグラウンド生成を担当します。色は全コマ共通のパレットで量子化し、アニメーション中の色のちらつきを抑えます。透明色と不透明の黒は別のGIFインデックスです。
 
