@@ -11,7 +11,7 @@ const toolNames={pencil:'鉛筆',eraser:'消しゴム',fill:'塗りつぶし',pi
 const state={project:createDemo(),active:0,tool:'pencil',color:'#efa45c',brush:1,grid:true,onion:false,reference:false,zoom:null,selection:null,cursor:null,playing:true,preview:0,previewTime:0,history:[],redo:[],source:[],drag:null,sample:true};
 let saveTimer,toastTimer,dbPromise,persistGeneration=0,lastDimensions='';
 const canvas=$('editor-canvas'),ctx=canvas.getContext('2d'),scratch=document.createElement('canvas'),sctx=scratch.getContext('2d');
-const pointerSession=new PointerSession(),mobileLayout=matchMedia('(max-width:899px)');
+const pointerSession=new PointerSession(),mobileLayout=matchMedia('(max-width:1023px)');
 function selectMobileView(view){
   document.body.dataset.mobileView=view;
   document.querySelectorAll('.mobile-nav [data-mobile-view-target]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mobileViewTarget===view)));

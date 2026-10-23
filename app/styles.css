@@ -31,13 +31,14 @@
 .prompt-card button{margin-top:10px}
 .guide-prompt-link{margin-bottom:20px}
 
-@media(max-width:899px){
-  body{font-size:14px;padding-bottom:calc(80px + env(safe-area-inset-bottom))}
+@media(max-width:1023px){
+  body{min-width:0;font-size:14px;padding-bottom:calc(80px + env(safe-area-inset-bottom))}
   .topbar{position:sticky;top:0;z-index:8;height:64px;padding:0 max(8px,env(safe-area-inset-right)) 0 max(8px,env(safe-area-inset-left));gap:6px}
   .brand{font-size:17px;letter-spacing:-.6px;flex-shrink:0}
   .brand-mark,.header-divider,.workspace-label{display:none}
   .brand-sub{font-size:7px;letter-spacing:3px}
   .top-actions{gap:4px}
+  .top-actions .quiet span,.top-actions .secondary span{display:none}
   .top-actions .quiet,.top-actions .secondary{width:44px;height:44px;min-width:44px;padding:0}
   .top-actions .primary{height:44px;padding:0 10px;font-size:12px;gap:5px;white-space:nowrap;flex-shrink:0}
   .top-actions svg{width:18px!important;height:18px}
@@ -164,6 +165,7 @@
   .mobile-nav svg{width:19px;height:19px}
   .app-footer{height:auto;min-height:44px;flex-wrap:wrap;padding:8px 2px;font-size:9px;letter-spacing:0}
   .app-footer button{min-height:44px;font-size:11px}
+  .app-footer #footer-spec{display:none}
   dialog,#new-dialog,#prompt-dialog{width:calc(100vw - 20px);max-width:640px;padding:18px;max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain}
   .dialog-heading{gap:8px;margin-bottom:16px;position:sticky;top:0;z-index:1;background:var(--white);padding-bottom:6px}
   .dialog-heading h2{font-size:19px;line-height:1.5}
