@@ -1,0 +1,20 @@
+{
+  "name": "dotflip-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A local-first pixel art and frame animation workbench built for humans and computer-use agents.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "release:package": "node scripts/package-release.mjs"
+  },
+  "dependencies": { "gifenc": "1.0.3" },
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "repository": { "type": "git", "url": "https://github.com/get2437/dotflip-studio.git" },
+  "bugs": { "url": "https://github.com/get2437/dotflip-studio/issues" },
+  "homepage": "https://github.com/get2437/dotflip-studio#readme"
+}

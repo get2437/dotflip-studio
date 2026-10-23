@@ -1,0 +1,14 @@
+node_modules/
+dist/
+artifacts/
+*.tar.gz
+*.log
+.DS_Store
+release/
+.env
+.env.*
+!.env.example
+.openai/
+*.pem
+*.p12
+*.pfx
