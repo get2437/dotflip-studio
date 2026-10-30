@@ -20,11 +20,10 @@ function selectMobileView(view){
 document.querySelectorAll('[data-mobile-view-target]').forEach(button=>button.onclick=()=>selectMobileView(button.dataset.mobileViewTarget));
 function arrangePalette(){
   if(mobileLayout.matches)$('editor-palette').append($('palette-section'));
-  else $('source-panel').insertBefore($('palette-section'),$('source-panel').querySelector('.local-note'));
+  else $('source-panel').append($('palette-section'));
   requestAnimationFrame(renderEditor);
 }
 mobileLayout.addEventListener('change',arrangePalette);arrangePalette();
-$('mobile-action-example').onclick=()=>$('action-example').click();
 function toast(message,error=false){const el=$('toast');el.textContent=message;el.classList.toggle('error',error);el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),4200);}
 function safe(fn){return async(...args)=>{try{await fn(...args);}catch(e){console.error(e);toast(e.message||'処理に失敗しました。',true);}};}
 function frame(){return state.project.frames[state.active];}
@@ -46,8 +45,8 @@ function scheduleSave(){
       if(source){record.source={name:source.name,width:source.width,height:source.height,url:source.bitmap.toDataURL('image/png')};}
       const db=await database();
       await new Promise((resolve,reject)=>{const tx=db.transaction('workspace','readwrite');tx.objectStore('workspace').put(record,'current');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
-      if(generation===persistGeneration)setSaveState('ブラウザに保存済み');
-    }catch(e){console.warn('Autosave unavailable',e);setSaveState('自動保存できません · 保存ボタンで保存',true);}
+      if(generation===persistGeneration)setSaveState('保存済み');
+    }catch(e){console.warn('Autosave unavailable',e);setSaveState('自動保存不可 · 保存ボタンへ',true);}
   },550);
 }
 function pushHistory(){
@@ -135,7 +134,6 @@ function render(){
   $('duplicate-frame').disabled=n>=LIMITS.frames;$('frame-left').disabled=state.active===0;$('frame-right').disabled=state.active===n-1;
   $('tool-name').textContent=toolNames[state.tool];
   canvas.classList.toggle('panning',state.tool==='pan');
-  $('canvas-touch-hint').textContent=state.tool==='pan'?'絵をドラッグして表示位置を移動。描き始めるときは鉛筆へ。':'タップ・ドラッグで描画。＋で拡大し「移動」で絵を動かせます。';
   document.querySelectorAll('[data-tool]').forEach(b=>{b.classList.toggle('active',b.dataset.tool===state.tool);b.setAttribute('aria-pressed',String(b.dataset.tool===state.tool));});
   $('grid-btn').classList.toggle('active',state.grid);$('grid-btn').setAttribute('aria-pressed',state.grid);
   $('onion-btn').classList.toggle('active',state.onion);$('onion-btn').setAttribute('aria-pressed',state.onion);
@@ -220,32 +218,32 @@ let bgIndex=0;$('preview-bg').onclick=()=>{bgIndex=(bgIndex+1)%4;const el=$('pre
 let fpsEditing=false;
 $('fps').addEventListener('input',e=>{if(!fpsEditing){pushHistory();fpsEditing=true;}const fps=Number(e.target.value);state.project.frames.forEach(f=>f.duration=Math.round(1000/fps));$('fps-label').textContent=fps+' FPS';renderFrames();renderPreview(true);$('total-duration').textContent=(state.project.frames.reduce((s,f)=>s+f.duration,0)/1000).toFixed(2)+' s';});
 $('fps').onchange=()=>{fpsEditing=false;changed();};
-function motionOptions(){const t=$('motion-type').value;$('blink-options').hidden=t!=='blink';$('motion-amount').disabled=t==='blink';$('motion-note').textContent=t==='blink'?'目を含む範囲を選択して、肌や毛の色を指定。生成後に閉じた目を整えてください。':t==='sway'?'先に髪・しっぽなどを範囲選択。移動元は透明になるので、下地を描き足して整えます。':'上下に動く余白を残しておくと、きれいにつながります。';}
+function motionOptions(){const t=$('motion-type').value;$('blink-options').hidden=t!=='blink';$('motion-amount').disabled=t==='blink';}
 $('motion-type').onchange=motionOptions;
 $('generate-motion').onclick=safe(()=>{
   const p=state.project,count=Number($('motion-count').value);
   if(p.frames.length+count>LIMITS.frames)throw new Error('コマは最大64枚です。不要なコマを減らしてください。');
   const frames=motionFrames(frame(),p.width,p.height,$('motion-type').value,count,Number($('motion-amount').value),state.selection,$('blink-color').value);
-  mutate(()=>{p.frames.splice(state.active+1,0,...frames);state.active++;state.selection=null;});toast(`${count}コマの動きを追加しました。各コマを自由に手直しできます。`);
+  mutate(()=>{p.frames.splice(state.active+1,0,...frames);state.active++;state.selection=null;});toast(`${count}コマを追加`);
 });
 function drawToSource(){const p=state.project,c=document.createElement('canvas');putImage(c.getContext('2d'),p.frames[0].pixels,p.width,p.height);state.source=[{bitmap:c,name:p.name,width:p.width,height:p.height}];renderSource();}
 $('action-btn').onclick=()=>{
   $('action-source-info').textContent=`現在の素材：${state.project.frames.length}コマ · ${state.project.width}×${state.project.height}px`;
-  $('action-status').textContent='元のポーズは「元に戻す」で復元できます。保存もおすすめです。';
+  $('action-status').textContent='';
   $('action-dialog').showModal();
 };
 $('create-action').onclick=safe(async()=>{
-  const button=$('create-action');button.disabled=true;button.textContent='戦闘シーンを組み立てています…';
+  const button=$('create-action');button.disabled=true;button.textContent='生成中…';
   try{
     await new Promise(r=>requestAnimationFrame(r));
     const project=createActionProject(state.project,{intensity:Number($('action-intensity').value),scene:$('action-scene').value,effects:$('action-effects').checked,ghosts:$('action-ghosts').checked,camera:$('action-camera').checked});
     mutate(()=>{state.project=project;state.active=0;state.preview=0;state.previewTime=0;state.selection=null;state.cursor=null;state.zoom=null;state.reference=false;});
-    $('action-dialog').close();selectMobileView('editor');toast(`戦闘シーンを${project.frames.length}コマに展開しました。すべてのコマを編集できます。`);
+    $('action-dialog').close();selectMobileView('editor');toast(`${project.frames.length}コマを生成`);
   }catch(e){$('action-status').textContent=e.message;throw e;}
   finally{button.disabled=false;button.textContent='戦闘シーンを作成';}
 });
 $('action-example').onclick=safe(async()=>{
-  const button=$('action-example');button.disabled=true;button.textContent='サンプルを読み込んでいます…';
+  const button=$('action-example');button.disabled=true;button.textContent='読込中…';
   try{
     const response=await fetch('./assets/surf-strike.sheet.json');if(!response.ok)throw new Error('サンプルを読み込めませんでした。再度お試しください。');
     const meta=await response.json(),image=await loadImage('./assets/surf-strike.sheet.png'),w=meta.meta.originalWidth,h=meta.meta.originalHeight;
@@ -254,8 +252,8 @@ $('action-example').onclick=safe(async()=>{
     const frames=meta.frames.map(f=>{cx.clearRect(0,0,w,h);cx.drawImage(image,f.rect.x,f.rect.y,w,h,0,0,w,h);return {pixels:cx.getImageData(0,0,w,h).data,duration:f.duration};});
     const project={name:meta.name,width:w,height:h,palette:makePalette(frames.map(f=>f.pixels),96),frames};
     mutate(()=>{state.project=project;state.active=28;state.preview=0;state.previewTime=0;state.zoom=null;state.selection=null;state.cursor=null;state.reference=false;});
-    drawToSource();scheduleSave();selectMobileView('editor');toast('SURF STRIKEを開きました。各コマの編集・保存・書き出しができます。');
-  }finally{button.disabled=false;button.textContent='完成サンプル「SURF STRIKE」を開く';}
+    drawToSource();scheduleSave();selectMobileView('editor');toast('サンプルを開きました');
+  }finally{button.disabled=false;button.textContent='サンプル（64コマ）';}
 });
 function renderSource(){
   const s=state.source[0];if(!s)return;const c=$('source-thumb');c.width=80;c.height=80;const cx=c.getContext('2d');cx.clearRect(0,0,80,80);cx.imageSmoothingEnabled=false;const a=Math.min(80/s.bitmap.width,80/s.bitmap.height);cx.drawImage(s.bitmap,(80-s.bitmap.width*a)/2,(80-s.bitmap.height*a)/2,s.bitmap.width*a,s.bitmap.height*a);
@@ -276,20 +274,20 @@ async function imageAsset(file,maxSide=2048){
 async function importFiles(files){
   const list=[...files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));if(!list.length)return;
   if(list.length>LIMITS.frames)throw new Error('一度に読み込める画像は64枚までです。');if(list.reduce((s,f)=>s+f.size,0)>128*1024*1024)throw new Error('画像の合計は128MBまでです。');
-  setSaveState('元画像を読み込み中…',true);const assets=[],maxSide=Math.min(2048,Math.floor(Math.sqrt(8*1024*1024/list.length)));for(const file of list)assets.push(await imageAsset(file,maxSide));
-  state.source=assets;renderSource();scheduleSave();toast(list.length>1?`${list.length}枚を読み込みました。変換すると名前順のコマになります。`:'元画像を読み込みました。設定を調整して「ドット絵に変換」へ。');
+  setSaveState('読込中…',true);const assets=[],maxSide=Math.min(2048,Math.floor(Math.sqrt(8*1024*1024/list.length)));for(const file of list)assets.push(await imageAsset(file,maxSide));
+  state.source=assets;renderSource();scheduleSave();toast(list.length>1?`${list.length}枚を読み込み`:'画像を読み込みました');
 }
 $('import-image').onclick=()=>$('image-input').click();$('image-input').onchange=safe(async e=>{try{await importFiles(e.target.files);}finally{e.target.value='';}});
 const dropzone=$('import-image');['dragenter','dragover'].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.add('drag-over');}));['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.remove('drag-over');}));dropzone.addEventListener('drop',safe(async e=>importFiles(e.dataTransfer.files)));
 document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>e.preventDefault());
 $('resolution').onchange=()=>{const v=$('resolution').value;$('custom-size').hidden=v!=='custom';$('resolution-label').textContent=v==='custom'?'CUSTOM':`${v} × ${v}`;};
-$('color-count').oninput=e=>$('color-count-label').textContent=e.target.value+' colors';
+$('color-count').oninput=e=>$('color-count-label').textContent=e.target.value+' 色';
 for(const id of ['contrast','saturation'])$(id).oninput=e=>$(id+'-value').textContent=e.target.value;
 $('convert-btn').onclick=safe(async()=>{
   if(!state.source.length)throw new Error('最初に元画像を読み込んでください。');
   const v=$('resolution').value,w=Number(v==='custom'?$('custom-width').value:v),h=Number(v==='custom'?$('custom-height').value:v);
   if(!Number.isInteger(w)||!Number.isInteger(h)||w<1||h<1||w>256||h>256)throw new Error('幅・高さは1〜256pxの整数で指定してください。');
-  $('convert-btn').disabled=true;$('convert-btn').textContent='ピクセルを整えています…';
+  $('convert-btn').disabled=true;$('convert-btn').textContent='変換中…';
   try{
     await new Promise(r=>requestAnimationFrame(r));
     let sources=state.source.map(s=>s.bitmap);
@@ -313,13 +311,13 @@ $('convert-btn').onclick=safe(async()=>{
     const mode=$('palette-mode').value,palette=mode==='auto'?makePalette(buffers,Number($('color-count').value)):[...PALETTES[mode]];
     const frames=buffers.map(p=>({pixels:quantize(p,w,h,palette,$('dither').value),duration:125}));
     mutate(()=>{state.project={name:state.source[0].name.replace(/\.[^.]+$/,'').slice(0,80),width:w,height:h,palette,frames};state.active=0;state.preview=0;state.selection=null;state.cursor=null;state.zoom=null;});
-    selectMobileView('editor');toast(`${w}×${h}px・${palette.length}色・${frames.length}コマに変換しました。`);
+    selectMobileView('editor');toast(`${w}×${h}px · ${palette.length}色 · ${frames.length}コマ`);
   }finally{$('convert-btn').disabled=false;$('convert-btn').innerHTML=icons('spark')+'ドット絵に変換'+icons('arrow');}
 });
 $('project-name').onchange=e=>{const name=e.target.value.trim()||'無題のスプライト';mutate(()=>state.project.name=name);};
 function filename(s){return s.replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').slice(0,80)||'sprite';}
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
-function saveProject(){download(new Blob([JSON.stringify(serializeProject(state.project))],{type:'application/json'}),filename(state.project.name)+'.dotflip.json');toast('プロジェクトを書き出しました。次回は「開く」から再編集できます。');}
+function saveProject(){download(new Blob([JSON.stringify(serializeProject(state.project))],{type:'application/json'}),filename(state.project.name)+'.dotflip.json');toast('JSONを保存しました');}
 $('save-project').onclick=saveProject;$('open-project').onclick=()=>$('project-input').click();
 $('project-input').onchange=safe(async e=>{
   try{const file=e.target.files[0];if(!file)return;if(file.size>LIMITS.fileBytes)throw new Error('プロジェクトは32MBまでです。');let data;try{data=JSON.parse(await file.text());}catch{throw new Error('JSONファイルを読み込めません。');}
@@ -327,22 +325,21 @@ $('project-input').onchange=safe(async e=>{
   }finally{e.target.value='';}
 });
 $('new-project').onclick=()=>$('new-dialog').showModal();
-$('create-project').onclick=safe(()=>{const w=Number($('new-width').value),h=Number($('new-height').value);if(!Number.isInteger(w)||!Number.isInteger(h)||w<1||h<1||w>256||h>256)throw new Error('大きさは1〜256pxの整数にしてください。');mutate(()=>{state.project={name:$('new-name').value.trim()||'無題のスプライト',width:w,height:h,palette:[...PALETTES.forest],frames:[newFrame(w,h)]};state.active=0;state.preview=0;state.selection=null;state.cursor=null;state.zoom=null;});drawToSource();scheduleSave();$('new-dialog').close();selectMobileView('editor');toast('新しいキャンバスを作成しました。');});
-$('demo-btn').onclick=()=>{pushHistory();state.project=createDemo();state.active=0;state.preview=0;state.zoom=null;state.selection=null;state.cursor=null;state.sample=true;drawToSource();render();scheduleSave();selectMobileView('editor');toast('サンプルを開きました。今までの編集は「元に戻す」で戻せます。');};
-for(const id of ['help-btn','agent-help'])$(id).onclick=()=>$('help-dialog').showModal();
+$('create-project').onclick=safe(()=>{const w=Number($('new-width').value),h=Number($('new-height').value);if(!Number.isInteger(w)||!Number.isInteger(h)||w<1||h<1||w>256||h>256)throw new Error('大きさは1〜256pxの整数にしてください。');mutate(()=>{state.project={name:$('new-name').value.trim()||'無題のスプライト',width:w,height:h,palette:[...PALETTES.forest],frames:[newFrame(w,h)]};state.active=0;state.preview=0;state.selection=null;state.cursor=null;state.zoom=null;});drawToSource();scheduleSave();$('new-dialog').close();selectMobileView('editor');toast('作成しました');});
+$('demo-btn').onclick=()=>{pushHistory();state.project=createDemo();state.active=0;state.preview=0;state.zoom=null;state.selection=null;state.cursor=null;state.sample=true;drawToSource();render();scheduleSave();selectMobileView('editor');toast('サンプルを開きました');};
+$('help-btn').onclick=()=>$('help-dialog').showModal();
 $('reference-btn').onclick=()=>$('reference-dialog').showModal();
 function openPromptExamples(){$('help-dialog').close();$('prompt-dialog').showModal();}
 $('prompt-help').onclick=openPromptExamples;
-const promptLink=document.createElement('button');promptLink.className='primary full guide-prompt-link';promptLink.textContent='AIへの指示例を読む・コピー';promptLink.onclick=openPromptExamples;
-$('help-dialog').querySelector('.guide-content').prepend(promptLink);
+$('guide-prompts').onclick=openPromptExamples;
 PROMPT_EXAMPLES.forEach(({title,text},index)=>{
   const card=document.createElement('article');card.className='prompt-card';
   const heading=document.createElement('h3');heading.textContent=title;
   const input=document.createElement('textarea');input.value=text;input.readOnly=true;input.setAttribute('aria-label',title+'の指示文');
-  const button=document.createElement('button');button.className='secondary';button.id='copy-prompt-'+index;button.textContent='この指示例をコピー';
+  const button=document.createElement('button');button.className='secondary';button.id='copy-prompt-'+index;button.textContent='コピー';
   button.onclick=async()=>{
-    try{await navigator.clipboard.writeText(text);$('prompt-copy-status').textContent='指示例をコピーしました。元画像と一緒にAIのチャットへ貼り付けてください。';}
-    catch{input.focus();input.select();$('prompt-copy-status').textContent='指示文を選択しました。長押し、またはブラウザのコピー操作でコピーしてください。';}
+    try{await navigator.clipboard.writeText(text);$('prompt-copy-status').textContent='コピーしました';}
+    catch{input.focus();input.select();$('prompt-copy-status').textContent='選択しました。コピーしてください';}
   };
   card.append(heading,input,button);$('prompt-examples').append(card);
 });
@@ -353,22 +350,22 @@ $('export-btn').onclick=()=>{const p=state.project;$('export-name').textContent=
 function exportSettings(){return {scale:Number($('export-scale').value),background:$('export-background').value,columns:clamp(Math.round(Number($('sheet-columns').value)||1),1,state.project.frames.length)};}
 function renderOutput(p,w,h,scale,bg){const c=document.createElement('canvas');c.width=w*scale;c.height=h*scale;const cx=c.getContext('2d');if(bg!=='transparent'){cx.fillStyle=bg;cx.fillRect(0,0,c.width,c.height);}const temp=document.createElement('canvas');putImage(temp.getContext('2d'),p,w,h);cx.imageSmoothingEnabled=false;cx.drawImage(temp,0,0,c.width,c.height);return c;}
 async function pngBlob(c){return new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(new Error('PNGを作成できませんでした。')),'image/png'));}
-$('export-png').onclick=safe(async()=>{const p=state.project,{scale,background}=exportSettings();download(await pngBlob(renderOutput(frame().pixels,p.width,p.height,scale,background)),filename(p.name)+`-${String(state.active+1).padStart(2,'0')}.png`);$('export-status').textContent='現在のコマをPNGに書き出しました。';});
+$('export-png').onclick=safe(async()=>{const p=state.project,{scale,background}=exportSettings();download(await pngBlob(renderOutput(frame().pixels,p.width,p.height,scale,background)),filename(p.name)+`-${String(state.active+1).padStart(2,'0')}.png`);$('export-status').textContent='PNGを保存しました';});
 $('export-sheet').onclick=safe(async()=>{
   const p=state.project,{scale,background,columns}=exportSettings(),meta=sheetMetadata(p,scale,columns);
   const maxSide=16384;if(meta.size.width>maxSide||meta.size.height>maxSide||meta.size.width*meta.size.height>32000000)throw new Error('シートが大きすぎます。倍率を下げるか列数を調整してください。');
   const c=document.createElement('canvas');c.width=meta.size.width;c.height=meta.size.height;const cx=c.getContext('2d');
   p.frames.forEach((f,i)=>{const r=meta.frames[i].rect;cx.drawImage(renderOutput(f.pixels,p.width,p.height,scale,background),r.x,r.y);});
-  const name=filename(p.name);meta.image=name+'.sheet.png';const png=await pngBlob(c);const zip=zipFiles([{name:name+'.sheet.png',data:await png.arrayBuffer()},{name:name+'.sheet.json',data:JSON.stringify(meta,null,2)}]);download(new Blob([zip],{type:'application/zip'}),name+'.spritesheet.zip');$('export-status').textContent='シートPNGと、コマの座標・表示時間のJSONをZIPにまとめて書き出しました。';
+  const name=filename(p.name);meta.image=name+'.sheet.png';const png=await pngBlob(c);const zip=zipFiles([{name:name+'.sheet.png',data:await png.arrayBuffer()},{name:name+'.sheet.json',data:JSON.stringify(meta,null,2)}]);download(new Blob([zip],{type:'application/zip'}),name+'.spritesheet.zip');$('export-status').textContent='PNG＋JSONを保存しました';
 });
 let exporting=false;
 $('export-gif').onclick=safe(async()=>{
   if(exporting)return;const {scale,background}=exportSettings(),p=cloneProject(state.project);
   if(p.width*p.height*scale*scale*p.frames.length>48000000)throw new Error('GIFが大きすぎます。出力倍率を下げてください。');
-  exporting=true;$('export-gif').disabled=true;$('export-status').classList.add('busy');$('export-status').textContent='GIFを書き出しています…';
+  exporting=true;$('export-gif').disabled=true;$('export-status').classList.add('busy');$('export-status').textContent='GIF出力中…';
   let worker,timer;try{
     const bytes=await new Promise((resolve,reject)=>{worker=new Worker(new URL('./gif-worker.js',import.meta.url),{type:'module'});timer=setTimeout(()=>reject(new Error('GIF生成が時間内に完了しませんでした。倍率やコマ数を下げてください。')),60000);worker.onmessage=e=>e.data.error?reject(new Error(e.data.error)):resolve(e.data.bytes);worker.onerror=()=>reject(new Error('GIF出力を開始できません。ブラウザを更新して再度お試しください。'));worker.postMessage({project:p,scale,background});});
-    download(new Blob([bytes],{type:'image/gif'}),filename(p.name)+'.gif');$('export-status').textContent='GIFを書き出しました。表示時間はGIF形式に合わせ10ms単位に丸められます。';
+    download(new Blob([bytes],{type:'image/gif'}),filename(p.name)+'.gif');$('export-status').textContent='GIFを保存しました';
   }catch(e){$('export-status').textContent=e.message;throw e;}finally{clearTimeout(timer);worker?.terminate();exporting=false;$('export-gif').disabled=false;$('export-status').classList.remove('busy');}
 });
 document.addEventListener('keydown',e=>{
@@ -405,7 +402,7 @@ async function init(){
     if(record.source?.url?.startsWith('data:image/png;base64,')){
       try{const image=await loadImage(record.source.url);const c=document.createElement('canvas');c.width=image.naturalWidth;c.height=image.naturalHeight;c.getContext('2d').drawImage(image,0,0);state.source=[{bitmap:c,name:String(record.source.name),width:record.source.width,height:record.source.height}];renderSource();}catch(e){console.warn('Source restore failed',e);}
     }
-    render();selectMobileView('editor');setSaveState('前回の作業を復元しました');
-  }catch(e){console.warn('Workspace restore unavailable',e);setSaveState('自動保存できません · 保存ボタンで保存',true);}
+    render();selectMobileView('editor');setSaveState('復元済み');
+  }catch(e){console.warn('Workspace restore unavailable',e);setSaveState('自動保存不可 · 保存ボタンへ',true);}
 }
 init();

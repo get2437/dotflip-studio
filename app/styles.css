@@ -198,3 +198,30 @@
   .topbar .brand-mark{display:grid;margin:0;transform:scale(.8) rotate(-5deg)}
   .brand>span:last-child{display:none}
 }
+
+/* Keep the workbench focused on the canvas and its controls. */
+.topbar{height:64px}
+.section-heading{margin-bottom:14px}
+.section-heading h2{margin:0;font-size:17px}
+.dropzone{min-height:80px;padding:16px 8px;gap:8px}
+.dropzone strong{font-size:13px}
+.timeline-heading h2{margin:0}
+.action-section>.field-heading{margin-bottom:12px}
+.prompt-help{margin-top:16px}
+.app-footer{justify-content:flex-end}
+.app-footer #footer-spec{margin-right:auto}
+.small-note:empty{display:none}
+.control-guide{margin:18px 0}
+.control-guide>div{display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.control-guide dt{font-weight:600}
+.control-guide dd{margin:0;color:#66775b}
+@media(max-width:1023px){
+  .section-heading{margin-bottom:12px!important}
+  .section-heading h2{font-size:18px}
+  .dropzone{min-height:88px;padding:16px 8px!important}
+  .dropzone strong{font-size:15px}
+  .brush-label>span::after{content:none}
+  .control-guide{font-size:13px}
+  .control-guide>div{grid-template-columns:76px minmax(0,1fr);gap:8px}
+  .prompt-help{margin-top:16px}
+}
