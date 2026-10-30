@@ -1,0 +1,44 @@
+{
+  "repository": "https://github.com/AleksTomatoOnion/Pixel_Art_Converter",
+  "revision": "c6b074e3348b59d1b45a696aa08f587e3035ead1",
+  "files": [
+    {
+      "path": "src/pipeline/types.ts",
+      "sha256": "9122218a2a150894fe345215d68de7a8be355f2d849d692d4763776f7cdaba14"
+    },
+    {
+      "path": "src/pipeline/color.ts",
+      "sha256": "63557aa81bd70774472083af3d5d097d6e183e2b6bbd03a77014ba24c52a7df4"
+    },
+    {
+      "path": "src/pipeline/adjust.ts",
+      "sha256": "deedb8e2121223408f671e734591c3ef517a202745321ae23fe2146c4992ccbc"
+    },
+    {
+      "path": "src/pipeline/flatten.ts",
+      "sha256": "df55c1c3c48196947969c9a669cbc2fcca9d2124e30ccd143b6948387601669f"
+    },
+    {
+      "path": "src/pipeline/pixelate.ts",
+      "sha256": "ce6b58ca0c369fcc2ad9e7277c7b6ba104f9215d6786aaee67eff3f52527eb59"
+    },
+    {
+      "path": "src/pipeline/lines.ts",
+      "sha256": "e9aa39e2ea3066dce24324681d567a9209a77b769dea80866731b646b513b850"
+    },
+    {
+      "path": "src/pipeline/cleanup.ts",
+      "sha256": "051754f4a923177b17cd02af4a50fd970d6c8a89f43643dad3f9229308d470e0"
+    },
+    {
+      "path": "src/pipeline/edges.ts",
+      "sha256": "97d5b178b3ab3824ffb73b60359b4f5baf083512b699032fc46101ba6a03424c"
+    }
+  ],
+  "changes": [
+    "TypeScript transformed to browser-native ESM; explicit .js imports",
+    "Alpha-aware Kuwahara, banding, sharpening and contour extraction for transparent sprite sheets",
+    "Preserve fine contour peaks when downsampling; ignore transparent neighbours and protect high-contrast dark details during cleanup",
+    "DOTFLIP performs palette selection across all poses in its own adapter; upstream logo and UI are not included"
+  ]
+}

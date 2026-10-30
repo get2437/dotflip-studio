@@ -7,12 +7,12 @@ test('static entry, imports, Worker and sample fetches share a content version',
   const version=html.match(/src="\.\/app\.js\?v=([a-f0-9]{12})"/)?.[1];
   assert.ok(version,'entry script must bypass old cached code');
   assert.ok(html.includes(`href="./styles.css?v=${version}"`));
-  const files=await readdir(root,{withFileTypes:true});let references=0;
+  async function scripts(directory){const out=[];for(const file of await readdir(new URL(directory,root),{withFileTypes:true})){if(file.isDirectory())out.push(...await scripts(directory+file.name+'/'));else if(file.name.endsWith('.js'))out.push(directory+file.name);}return out;}
+  const files=await scripts('');let references=0;
   for(const file of files){
-    if(!file.isFile()||!file.name.endsWith('.js'))continue;
-    const code=await readFile(new URL(file.name,root),'utf8');
+    const code=await readFile(new URL(file,root),'utf8');
     for(const match of code.matchAll(/(['"])(\.{1,2}\/[^'"\r\n]+\.(?:js|json)(?:\?[^'"\r\n]*)?)\1/g)){
-      references++;assert.equal(new URL(match[2],root).searchParams.get('v'),version,`${file.name}: ${match[2]}`);
+      references++;assert.equal(new URL(match[2],root).searchParams.get('v'),version,`${file}: ${match[2]}`);
     }
   }
   assert.ok(references>=10,'must cover dependent modules, not only the entry');

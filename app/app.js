@@ -5,6 +5,7 @@ import { zipFiles } from './zip.js';
 import { sheetRects, spriteBounds, extractSprite, createActionProject } from './action.js';
 import { fitZoom, PointerSession } from './viewport.js';
 import { PROMPT_EXAMPLES } from './prompts.js';
+import {workSize} from './pixel-converter.js';
 const $=id=>document.getElementById(id);
 const icons=name=>`<svg><use href="#i-${name}"/></svg>`;
 const toolNames={pencil:'鉛筆',eraser:'消しゴム',fill:'塗りつぶし',picker:'スポイト',select:'範囲選択',line:'直線',rect:'四角形',pan:'画面移動'};
@@ -281,6 +282,8 @@ document.addEventListener('dragover',e=>e.preventDefault());document.addEventLis
 $('resolution').onchange=()=>{const v=$('resolution').value;$('custom-size').hidden=v!=='custom';$('resolution-label').textContent=v==='custom'?'CUSTOM':`${v} × ${v}`;};
 $('color-count').oninput=e=>$('color-count-label').textContent=e.target.value+' 色';
 for(const id of ['contrast','saturation'])$(id).oninput=e=>$(id+'-value').textContent=e.target.value;
+function updateEngineControls(){const stylize=$('conversion-engine').value==='pixel-art';$('pixel-style').disabled=!stylize;$('sampling').disabled=stylize;}
+$('conversion-engine').onchange=updateEngineControls;updateEngineControls();
 $('convert-btn').onclick=safe(async()=>{
   if(!state.source.length)throw new Error('最初に元画像を読み込んでください。');
   const v=$('resolution').value,w=Number(v==='custom'?$('custom-width').value:v),h=Number(v==='custom'?$('custom-height').value:v);
@@ -298,17 +301,33 @@ $('convert-btn').onclick=safe(async()=>{
         sources=rects.map(r=>{const c=document.createElement('canvas');putImage(c.getContext('2d'),extractSprite(data,sheet.width,sheet.height,r,side),side,side);return c;});
       }else sources=sheetRects(sheet.width,sheet.height,cols,rows,count).map(r=>{const c=document.createElement('canvas');c.width=r.width;c.height=r.height;c.getContext('2d').drawImage(sheet,r.x,r.y,r.width,r.height,0,0,r.width,r.height);return c;});
     }
+    const stylize=$('conversion-engine').value==='pixel-art',work=stylize?workSize(w,h,sources.length):{width:w,height:h};
+    const sourceName=state.source[0].name;
     const buffers=sources.map(image=>{
-      const c=document.createElement('canvas');c.width=w;c.height=h;const cx=c.getContext('2d');cx.imageSmoothingEnabled=$('sampling').value!=='nearest';cx.imageSmoothingQuality='high';
+      const c=document.createElement('canvas');c.width=work.width;c.height=work.height;const cx=c.getContext('2d');cx.imageSmoothingEnabled=stylize||$('sampling').value!=='nearest';cx.imageSmoothingQuality='high';
       const mode=$('image-fit').value;
-      if(mode==='stretch')cx.drawImage(image,0,0,w,h);else{const scale=(mode==='cover'?Math.max:Math.min)(w/image.width,h/image.height);cx.drawImage(image,(w-image.width*scale)/2,(h-image.height*scale)/2,image.width*scale,image.height*scale);}
-      let data=cx.getImageData(0,0,w,h).data;
-      if($('remove-bg').checked)data=removeBackground(data,w,h,Number($('bg-tolerance').value));
+      if(mode==='stretch')cx.drawImage(image,0,0,work.width,work.height);else{const scale=(mode==='cover'?Math.max:Math.min)(work.width/image.width,work.height/image.height);cx.drawImage(image,(work.width-image.width*scale)/2,(work.height-image.height*scale)/2,image.width*scale,image.height*scale);}
+      let data=cx.getImageData(0,0,work.width,work.height).data;
+      if($('remove-bg').checked)data=removeBackground(data,work.width,work.height,Number($('bg-tolerance').value));
       return adjustColors(data,Number($('contrast').value),Number($('saturation').value));
     });
-    const mode=$('palette-mode').value,palette=mode==='auto'?makePalette(buffers,Number($('color-count').value)):[...PALETTES[mode]];
-    const frames=buffers.map(p=>({pixels:quantize(p,w,h,palette,$('dither').value),duration:125}));
-    mutate(()=>{state.project={name:state.source[0].name.replace(/\.[^.]+$/,'').slice(0,80),width:w,height:h,palette,frames};state.active=0;state.preview=0;state.selection=null;state.cursor=null;state.zoom=null;});
+    const mode=$('palette-mode').value,fixed=mode==='auto'?null:[...PALETTES[mode]];
+    let palette,pixels;
+    if(stylize){
+      let worker,timer;
+      try{
+        const result=await new Promise((resolve,reject)=>{
+          worker=new Worker(new URL('./pixel-worker.js',import.meta.url),{type:'module'});
+          timer=setTimeout(()=>reject(new Error('ドット絵への変換に時間がかかっています。サイズやコマ数を下げてください。')),90000);
+          worker.onmessage=({data})=>{if(data.error)reject(new Error(data.error));else if(data.result)resolve(data.result);else if(data.progress){const {current,total,phase}=data.progress;$('convert-btn').textContent=`${phase==='prepare'?'輪郭・陰影を整理':'ドットを仕上げ'}… ${current}/${total}`;}};
+          worker.onerror=()=>reject(new Error('変換エンジンを読み込めませんでした。ページを開き直してください。'));
+          worker.postMessage({sources:buffers.map(data=>({...work,data})),settings:{width:w,height:h,colors:Number($('color-count').value),palette:fixed,style:$('pixel-style').value,dither:$('dither').value}},buffers.map(p=>p.buffer));
+        });
+        palette=result.palette;pixels=result.buffers;
+      }finally{clearTimeout(timer);worker?.terminate();}
+    }else{palette=fixed||makePalette(buffers,Number($('color-count').value));pixels=buffers.map(p=>quantize(p,w,h,palette,$('dither').value));}
+    const frames=pixels.map(p=>({pixels:p,duration:125}));
+    mutate(()=>{state.project={name:sourceName.replace(/\.[^.]+$/,'').slice(0,80),width:w,height:h,palette,frames};state.active=0;state.preview=0;state.selection=null;state.cursor=null;state.zoom=null;});
     selectMobileView('editor');toast(`${w}×${h}px · ${palette.length}色 · ${frames.length}コマ`);
   }finally{$('convert-btn').disabled=false;$('convert-btn').innerHTML=icons('spark')+'ドット絵に変換'+icons('arrow');}
 });

@@ -113,7 +113,7 @@ export function createActionProject(source, options={}) {
   const poses=source.frames,n=poses.length,steps=4,C=COLORS;
   const roots=[[67,0],[58,4],[131,0],[145,0],[141,-5],[101,3],[111,-15],[151,-32],[149,-25],[142,-20],[137,4],[99,1],[72,3],[126,0],[94,3],[67,0]];
   const hits=new Set([2,3,4,7,8,9,10,13]),frames=[];
-  const scale=Math.min(144/source.width,144/source.height),strength=.7+intensity*.1;
+  const fitScale=Math.min(144/source.width,144/source.height),scale=fitScale>=1?Math.floor(fitScale):fitScale,strength=.7+intensity*.1;
   for(let slot=0;slot<16;slot++)for(let sub=0;sub<steps;sub++) {
     const i=Math.round(slot*(n-1)/15),nextSlot=Math.min(15,slot+1);
     const u=sub/steps,ease=u*u*(3-2*u),a=roots[slot],b=roots[nextSlot];

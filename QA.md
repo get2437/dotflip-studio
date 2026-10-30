@@ -11,6 +11,8 @@ npm run release:package
 
 The Node test suite covers pixel operations, transparency, common palettes, project JSON validation, GIF indexing and loop encoding, ZIP generation, uneven sheet division, connected sprite extraction, and action composition. Afterimages are disabled by default; enabling them is an explicit option. The input poses remain unchanged and the first and final guard frames match.
 
+The dedicated pixel conversion engine is tested for texture suppression with hard-edge preservation, transparent-gutter colour isolation, hidden-RGB independence, weak-speck cleanup while retaining dark eye pixels, shared palette consistency and a bounded working raster. Low-resolution action sprites enlarge by integer factors. Visual art-style acceptance is separate from file/export correctness; a valid GIF does not by itself establish that a convincing pixel-art drawing was produced.
+
 CI runs the build, tests, and release packager on Windows and Linux with Node.js 22. The Actions dependencies are pinned to official release commit hashes and the workflow token has read-only permissions.
 
 ## Export verification

@@ -3,6 +3,13 @@ import assert from 'node:assert/strict';
 import { createActionProject, sheetRects, spriteBounds, extractSprite } from '../app/action.js';
 import { newFrame, setPixel, rgba, serializeProject, parseProject } from '../app/core.js';
 
+test('action enlargement keeps low-resolution source pixels on an integer grid',()=>{
+  const f=newFrame(64,64);for(let y=30;y<32;y++)for(let x=30;x<32;x++)setPixel(f.pixels,64,64,x,y,rgba('#ff0000'));
+  const source={name:'pixel grid',width:64,height:64,palette:['#ff0000'],frames:[f,structuredClone(f)]};
+  const project=createActionProject(source,{effects:false,camera:false});
+  for(const frame of project.frames)assert.equal(frame.pixels.filter((v,i)=>i%4===3&&v===255).length,16,'2x2 source pixels must remain four 2x2 blocks');
+});
+
 test('uneven sprite sheet grid covers every pixel exactly once',()=>{
   const w=1254,h=1253,rects=sheetRects(w,h,4,4,16),coverage=new Uint8Array(w*h);
   for(const r of rects)for(let y=r.y;y<r.y+r.height;y++)for(let x=r.x;x<r.x+r.width;x++)coverage[y*w+x]++;
