@@ -325,11 +325,23 @@ $('project-input').onchange=safe(async e=>{
 $('new-project').onclick=()=>$('new-dialog').showModal();
 $('create-project').onclick=safe(()=>{const w=Number($('new-width').value),h=Number($('new-height').value);if(!Number.isInteger(w)||!Number.isInteger(h)||w<1||h<1||w>256||h>256)throw new Error('大きさは1〜256pxの整数にしてください。');mutate(()=>{state.project={name:$('new-name').value.trim()||'無題のスプライト',width:w,height:h,palette:[...PALETTES.forest],frames:[newFrame(w,h)]};state.active=0;state.preview=0;state.selection=null;state.cursor=null;state.zoom=null;});drawToSource();scheduleSave();$('new-dialog').close();selectMobileView('editor');toast('作成しました');});
 $('demo-btn').onclick=()=>{pushHistory();state.project=createDemo();state.active=0;state.preview=0;state.zoom=null;state.selection=null;state.cursor=null;state.sample=true;drawToSource();render();scheduleSave();selectMobileView('editor');toast('サンプルを開きました');};
-$('help-btn').onclick=()=>$('help-dialog').showModal();
+$('help-btn').onclick=()=>{$('ai-guide-dialog').close();$('help-dialog').showModal();};
 $('reference-btn').onclick=()=>$('reference-dialog').showModal();
-function openPromptExamples(){$('help-dialog').close();$('prompt-dialog').showModal();}
-$('prompt-help').onclick=openPromptExamples;
+function openAiGuide(){$('help-dialog').close();$('prompt-dialog').close();if(!$('ai-guide-dialog').open)$('ai-guide-dialog').showModal();}
+$('ai-guide-btn').onclick=openAiGuide;
+$('prompt-help').onclick=openAiGuide;
+function openPromptExamples(){$('ai-guide-dialog').close();$('help-dialog').close();$('prompt-dialog').showModal();}
+$('ai-guide-prompts').onclick=openPromptExamples;
 $('guide-prompts').onclick=openPromptExamples;
+$('copy-ai-guide').onclick=async()=>{
+  const body=[...$('ai-workflow').children].map(node=>node.matches('ol')?[...node.children].map((item,index)=>`${index+1}. ${item.innerText}`).join('\n\n'):node.innerText).join('\n\n');
+  const text=`DOTFLIP Studio AI用手順\n${new URL('./#ai-guide',location.href).href}\n\n${body}`;
+  const input=$('ai-guide-copy-text');input.value=text;input.hidden=false;input.focus();input.select();
+  try{await navigator.clipboard.writeText(text);$('ai-guide-copy-status').textContent='コピーしました';}
+  catch{$('ai-guide-copy-status').textContent='手順全文を選択しました。コピーしてください。';}
+};
+function openLinkedGuide(){if(location.hash==='#ai-guide')openAiGuide();}
+window.addEventListener('hashchange',openLinkedGuide);openLinkedGuide();
 PROMPT_EXAMPLES.forEach(({title,text},index)=>{
   const card=document.createElement('article');card.className='prompt-card';
   const heading=document.createElement('h3');heading.textContent=title;
