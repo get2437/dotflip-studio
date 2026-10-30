@@ -321,13 +321,20 @@ async function importFiles(files){
   const list=[...files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));if(!list.length)return;
   if(list.length>LIMITS.frames)throw new Error('一度に読み込める画像は64枚までです。');if(list.reduce((s,f)=>s+f.size,0)>128*1024*1024)throw new Error('画像の合計は128MBまでです。');
   setSaveState('読込中…',true);const assets=[],maxSide=Math.min(2048,Math.floor(Math.sqrt(8*1024*1024/list.length)));for(const file of list)assets.push(await imageAsset(file,maxSide));
-  state.source=assets;renderSource();scheduleSave();toast(list.length>1?`${list.length}枚を読み込み`:'画像を読み込みました');
+  state.source=assets;applyConversionDefaults();renderSource();scheduleSave();toast(list.length>1?`${list.length}枚を読み込み`:'画像を読み込みました');
 }
 $('import-image').onclick=()=>$('image-input').click();$('image-input').onchange=safe(async e=>{try{await importFiles(e.target.files);}finally{e.target.value='';}});
 const dropzone=$('import-image');['dragenter','dragover'].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.add('drag-over');}));['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();dropzone.classList.remove('drag-over');}));dropzone.addEventListener('drop',safe(async e=>importFiles(e.dataTransfer.files)));
 document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>e.preventDefault());
 $('resolution').onchange=()=>{const v=$('resolution').value;$('custom-size').hidden=v!=='custom';$('resolution-label').textContent=v==='custom'?'CUSTOM':`${v} × ${v}`;};
 $('color-count').oninput=e=>$('color-count-label').textContent=e.target.value+' 色';
+function applyConversionDefaults(){
+  // Start new source material at a size that keeps faces and thin weapons readable.
+  // Loading a saved project never resamples or recolors its existing pixels.
+  $('resolution').value='128';$('resolution').onchange();
+  $('color-count').value='32';$('color-count-label').textContent='32 色';
+  $('pixel-style').value='soft';
+}
 for(const id of ['contrast','saturation'])$(id).oninput=e=>$(id+'-value').textContent=e.target.value;
 function updateEngineControls(){const stylize=$('conversion-engine').value==='pixel-art';$('pixel-style').disabled=!stylize;$('sampling').disabled=stylize;}
 $('conversion-engine').onchange=updateEngineControls;updateEngineControls();
@@ -482,5 +489,6 @@ async function init(){
     }
     render();selectMobileView('editor');setSaveState('復元済み');
   }catch(e){console.warn('Workspace restore unavailable',e);setSaveState('自動保存不可 · 保存ボタンへ',true);}
+  finally{applyConversionDefaults();}
 }
 init();

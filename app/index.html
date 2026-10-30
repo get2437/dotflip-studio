@@ -49,10 +49,10 @@
     <div class="source-card"><div class="source-thumb checker"><canvas id="source-thumb" width="64" height="64" aria-label="読み込んだ元画像"></canvas></div><div><strong id="source-name">森の小さな相棒</strong><span id="source-info">64 × 64 px · サンプル</span></div><button id="reference-btn" class="icon-btn" aria-label="元画像を大きく見る" title="元画像を大きく見る"><svg><use href="#i-eye"/></svg></button></div>
     <details class="advanced sheet-import"><summary>シート分割</summary><div class="advanced-fields"><label class="checkbox-label"><input id="split-sheet" type="checkbox">分割して読み込む</label><div class="field-pair"><label>列<input id="sheet-import-cols" type="number" value="4" min="1" max="64"></label><label>行<input id="sheet-import-rows" type="number" value="2" min="1" max="64"></label></div><label>コマ数<input id="sheet-import-count" type="number" value="8" min="1" max="64"></label><label>切り出し方<select id="sheet-extract"><option value="grid">等分グリッド</option><option value="alpha">透過領域を抽出</option></select></label></div></details>
     <div class="control-section"><label>変換エンジン<select id="conversion-engine"><option value="pixel-art" selected>ドット絵化（輪郭・陰影）</option><option value="basic">縮小・減色のみ</option></select></label></div>
-    <div class="control-section"><div class="field-heading"><label for="resolution">サイズ</label><span class="mono" id="resolution-label">64 × 64</span></div><select id="resolution"><option value="32">32 × 32</option><option value="48">48 × 48</option><option value="64" selected>64 × 64</option><option value="96">96 × 96</option><option value="128">128 × 128</option><option value="256">256 × 256</option><option value="custom">カスタム</option></select><div id="custom-size" class="field-pair" hidden><label>幅 <input id="custom-width" type="number" min="1" max="256" value="64"></label><label>高さ <input id="custom-height" type="number" min="1" max="256" value="64"></label></div></div>
-    <div class="control-section"><div class="field-heading"><label for="color-count">色数</label><output id="color-count-label">24 色</output></div><input id="color-count" type="range" min="4" max="64" step="4" value="24"></div>
+    <div class="control-section"><div class="field-heading"><label for="resolution">サイズ</label><span class="mono" id="resolution-label">128 × 128</span></div><select id="resolution"><option value="32">32 × 32</option><option value="48">48 × 48</option><option value="64">64 × 64</option><option value="96">96 × 96</option><option value="128" selected>128 × 128</option><option value="256">256 × 256</option><option value="custom">カスタム</option></select><div id="custom-size" class="field-pair" hidden><label>幅 <input id="custom-width" type="number" min="1" max="256" value="128"></label><label>高さ <input id="custom-height" type="number" min="1" max="256" value="128"></label></div></div>
+    <div class="control-section"><div class="field-heading"><label for="color-count">色数</label><output id="color-count-label">32 色</output></div><input id="color-count" type="range" min="4" max="64" step="4" value="32"></div>
     <div class="field-pair"><label>パレット<select id="palette-mode"><option value="auto">元画像から自動</option><option value="forest">Forest 16</option><option value="endesga">ENDESGA 16</option><option value="gameboy">Game Boy 4</option></select></label><label>ディザリング<select id="dither"><option value="none">なし</option><option value="ordered">規則的</option><option value="floyd">誤差拡散</option></select></label></div>
-    <details class="advanced"><summary>変換設定</summary><div class="advanced-fields"><label>ドット絵化の強さ<select id="pixel-style"><option value="soft">弱め</option><option value="balanced" selected>標準</option><option value="strong">強め</option></select></label><label>縮小方法<select id="sampling"><option value="smooth">面積平均</option><option value="nearest">ニアレスト</option></select></label><label>画像の収め方<select id="image-fit"><option value="contain">全体を収める</option><option value="cover">中央で切り抜く</option><option value="stretch">サイズに合わせる</option></select></label><label>コントラスト <output id="contrast-value">0</output><input id="contrast" type="range" min="-80" max="80" value="0"></label><label>彩度 <output id="saturation-value">0</output><input id="saturation" type="range" min="-100" max="100" value="0"></label><label class="checkbox-label"><input id="remove-bg" type="checkbox">単色の背景を透過</label><label>背景の許容差<input id="bg-tolerance" type="range" min="5" max="150" value="35"></label></div></details>
+    <details class="advanced"><summary>変換設定</summary><div class="advanced-fields"><label>ドット絵化の強さ<select id="pixel-style"><option value="soft" selected>弱め</option><option value="balanced">標準</option><option value="strong">強め</option></select></label><label>縮小方法<select id="sampling"><option value="smooth">面積平均</option><option value="nearest">ニアレスト</option></select></label><label>画像の収め方<select id="image-fit"><option value="contain">全体を収める</option><option value="cover">中央で切り抜く</option><option value="stretch">サイズに合わせる</option></select></label><label>コントラスト <output id="contrast-value">0</output><input id="contrast" type="range" min="-80" max="80" value="0"></label><label>彩度 <output id="saturation-value">0</output><input id="saturation" type="range" min="-100" max="100" value="0"></label><label class="checkbox-label"><input id="remove-bg" type="checkbox">単色の背景を透過</label><label>背景の許容差<input id="bg-tolerance" type="range" min="5" max="150" value="35"></label></div></details>
     <button id="convert-btn" class="primary full"><svg><use href="#i-spark"/></svg>ドット絵に変換<svg><use href="#i-arrow"/></svg></button>
     <div class="palette-section" id="palette-section"><div class="field-heading"><label>描画色</label><span id="palette-count" class="mono">16</span></div><div id="palette-swatches" class="palette-swatches" aria-label="描画色を選択"></div><div class="current-color"><label class="color-picker-wrap"><input id="color-picker" type="color" value="#efa45c" aria-label="描画色"><span id="color-swatch"></span></label><input id="color-hex" value="#efa45c" aria-label="描画色の16進数コード" maxlength="7" spellcheck="false"><button id="add-color" class="icon-btn" title="現在の色をパレットに追加" aria-label="色をパレットに追加"><svg><use href="#i-plus"/></svg></button></div></div>
   </aside>
@@ -105,24 +105,25 @@
     <p>元画像から乱舞の透過GIFを作る手順。ポーズの描き起こしはAI側の画像生成を使い、変換後のピクセル修正・全コマの確認・保存まで、AIがこのサイトをコンピュータユーズで操作します。</p>
     <p>スマホ幅では下の「画像」「編集」「動き」で切り替えます。16コマの透過ポーズが用意できている場合は2から始めます。</p>
     <ol class="ai-steps">
-      <li><h3>16ポーズの素材を用意</h3>
-        <p>元画像をデザイン参照にして、同じキャラクターの16ポーズを生成します。通常のイラストから作れるので、この段階でドット絵になっている必要はありません。ドット絵化は2の専用変換エンジンで行います。</p>
-        <p>透明背景のPNGに4列×4行、左上から横順に1体ずつ配置。顔・髪・服・武器・縮尺をそろえ、手足と武器が切れない余白を取ります。輪郭と細い武器が識別できる大きさで用意します。</p>
+      <li><h3>構え1体で仕上がりを決め、16ポーズを用意</h3>
+        <p>最初に元画像から構え1体を透明PNGで生成します。16ビットのアクションゲーム風に、角の立ったドットのまとまりと階段状の輪郭で描き起こします。人型は元の年齢感と特徴を保った3〜4頭身を目安に、顔を大きく、髪・衣装の陰影は少数の平らな色面、武器は明瞭に描きます。128pxでも読める形へ整理し、最終的なピクセルの格子と共通パレットは専用変換エンジンでそろえます。</p>
+        <p>先に「画像を開く」で1体を読み込み、「分割して読み込む」はオフ。2の設定（128×128・32色・弱め）で変換し、通常サイズと4×で顔・衣装・武器を確認します。目安は正面の顔幅8px以上。見える目の形が読め、髪と顔・衣装の色面・剣の輪郭が分かれる見本にします。顔が単なる肌色の塊なら、素材の顔を大きく描き直して再変換します。</p>
+        <p>見本の元PNGと変換後を保存し、その見本を参照して同じキャラクターの16ポーズを生成。透明背景のPNGに4列×4行、左上から横順に1体ずつ配置。顔・髪・服・武器・頭身・縮尺をそろえ、手足と武器が切れない余白を取ります。</p>
         <p>順序：01構え → 02予備動作 → 03初撃 → 04逆方向の一撃 → 05上への攻撃 → 06踏み込み → 07跳躍 → 08空中攻撃 → 09回転攻撃 → 10振り下ろし → 11着地 → 12回避 → 13大技の予備動作 → 14振り抜き → 15復帰 → 16最初と同じ構え。武器は元画像に合わせます。</p>
         <p class="ai-check"><strong>確認：</strong>16体が離れていること。背景・敵・文字・ビーム・残像・斬撃などの演出を描き込まず、実際に透明なPNGであること。</p>
       </li>
       <li><h3>画像を読み込み・分割</h3>
         <p>「画像」→「画像を開く」で生成したPNGを読み込みます。「シート分割」を開き、「分割して読み込む」をオン。列＝4、行＝4、コマ数＝16、切り出し方＝「透過領域を抽出」にします。</p>
-        <p>変換エンジン＝「ドット絵化（輪郭・陰影）」、サイズ＝64×64、色数＝24、パレット＝「元画像から自動」、ディザリング＝「なし」。「変換設定」のドット絵化の強さ＝「標準」、画像の収め方＝「全体を収める」を選び、「ドット絵に変換」を押します。</p>
+        <p>変換エンジン＝「ドット絵化（輪郭・陰影）」、サイズ＝128×128、色数＝32、パレット＝「元画像から自動」、ディザリング＝「なし」。「変換設定」のドット絵化の強さ＝「弱め」、画像の収め方＝「全体を収める」を選び、「ドット絵に変換」を押します。サイズ・色数・強さは新しい画像の読み込み時にこの初期値へ戻ります。</p>
         <p>専用エンジンが縮小前に面と陰影を整理し、縮小後に孤立点と輪郭を補正します。すでにドットで作画した素材を保つときは「縮小・減色のみ」と「ニアレスト」を使います。エンジンは<a href="https://github.com/AleksTomatoOnion/Pixel_Art_Converter" target="_blank" rel="noopener noreferrer">Pixel-Art Converter</a>の処理を組み込んだもので、このブラウザ内で動きます。</p>
         <p class="ai-check"><strong>確認：</strong>「編集」のコマ数が16 FRAMESになり、各コマに1体だけ表示されること。複数のPNGを読み込む場合は01〜16の名前順に用意し、「分割して読み込む」をオフにします。</p>
       </li>
       <li><h3>AIが16コマのピクセルを修正・保存</h3>
         <p>「編集」で全コマを順に選び、元画像と見比べます。AI自身が目・顔・髪・衣装・剣の潰れ、輪郭の孤立点や穴を見つけ、鉛筆・消しゴム・直線などで描き直します。修正作業を利用者へ渡さず、各コマで必要なピクセルを実際に編集してください。</p>
         <p>精密な修正は「座標編集」を開き、X・Yを入れて「表示」。数字付き拡大図と現在の色を見て、描画色を#RRGGBBで指定し「1px描く」か「1px消す」。左上が0,0です。拡大図のクリックでも座標を指定でき、誤った変更は「元に戻す」で戻せます。目や剣先を描く前に、そのコマの向き・顔の範囲・武器の線を確認します。</p>
-        <p>同じ特徴を全コマで保ち、最初と最後の構えをそろえます。修正前後を拡大と通常サイズで見比べ、必要なら「書き出し」→4×→「PNG 現在のコマ」でも確認します。</p>
-        <p>プロジェクト名を「キャラ名-poses」などに入力し、欄外をクリックして確定。「保存」で元の16ポーズを.dotflip.jsonとして保存します。</p>
-        <p class="ai-check"><strong>確認：</strong>全16コマを見て、AIが必要な箇所を修正済みであること。目・剣・輪郭が通常サイズでも読め、修正で別の部位を壊していないことを確認してから、元のPNGと修正した16コマのJSONを保存します。</p>
+        <p>1の見本と同じ特徴を全コマで保ち、最初と最後の構えをそろえます。修正前後を拡大と通常サイズで見比べ、必要なら「書き出し」→4×→「PNG 現在のコマ」でも確認します。正面は両目、横顔は見える目の形と向きを整え、顔や衣装の大きな崩れがあれば1の素材から直します。</p>
+        <p>プロジェクト名を「キャラ名-poses」などに入力し、Tabで確定。「保存」で元の16ポーズを.dotflip.jsonとして保存します。</p>
+        <p class="ai-check"><strong>確認：</strong>全16コマを見て、AIが必要な箇所を修正済みであること。顔・衣装が1の見本と同じ密度で読め、目・剣・輪郭が通常サイズでも明瞭で、修正で別の部位を壊していないこと。点を数個足したことだけで完了にせず、元のPNGと修正した16コマのJSONを保存します。</p>
       </li>
       <li><h3>戦闘シーンを作成</h3>
         <p>「動き」→「戦闘シーン」。強さ＝「全力コンボ」、ステージ＝好みで選択。「斬撃エフェクト」はオン、「ビーム」と「残像」はオフ。「画面揺れ」は希望に合わせ、「戦闘シーンを作成」を押します。</p>
@@ -140,7 +141,8 @@
     </ol>
     <h3>止まったとき</h3>
     <dl class="ai-recovery">
-      <div><dt>縮小したイラストに見える</dt><dd>変換エンジンを「ドット絵化（輪郭・陰影）」にし、強さを「強め」にして再変換。顔や剣が潰れる場合は「弱め」、サイズ96×96、32色を試します。出力倍率を上げるだけでは作画は変わりません。</dd></div>
+      <div><dt>顔が潰れる・作画が見本より粗い</dt><dd>128×128・32色・「弱め」を確認し、1の構えの見本と比較。顔が小さすぎる場合は素材の頭身と顔の大きさを直して再変換します。必要なら256×256も比較し、明瞭な方を選びます。出力倍率は表示の大きさだけを変えます。</dd></div>
+      <div><dt>陰影が細かく散って見える</dt><dd>素材の陰影を平らな色面へ整理して再変換。128×128のまま「標準」も比較し、目・衣装の境目が残る方を選びます。輪郭の孤立点は座標編集で直します。</dd></div>
       <div><dt>画像生成が使えない</dt><dd>16コマの透過ポーズを用意して2から進めます。元画像1枚のまま、乱舞の作成はできません。</dd></div>
       <div><dt>検出数が違う・ポーズが混ざる</dt><dd>4×4のセル内に収まっている素材なら、切り出し方を「等分グリッド」にして再変換。体や武器が接触・はみ出しを起こしていたら、1へ戻り余白を増やして生成し直します。</dd></div>
       <div><dt>透過背景・2〜16コマのエラー</dt><dd>16ポーズのJSONを「開く」から読み直します。64コマの完成版を戦闘素材にしないこと。背景が焼き込まれていたら1へ戻ります。単色背景だけは「変換設定」→「単色の背景を透過」で除去できます。</dd></div>
@@ -160,7 +162,7 @@
     <div class="shortcut-grid"><span><kbd>B</kbd>鉛筆</span><span><kbd>E</kbd>消しゴム</span><span><kbd>F</kbd>塗りつぶし</span><span><kbd>I</kbd>スポイト</span><span><kbd>M</kbd>選択</span><span><kbd>L</kbd>直線</span><span><kbd>R</kbd>四角形</span><span><kbd>H</kbd>移動</span><span><kbd>G</kbd>グリッド</span><span><kbd>O</kbd>透かし</span><span><kbd>Space</kbd>再生</span><span><kbd>Ctrl Z</kbd>元に戻す</span><span><kbd>Ctrl D</kbd>複製</span></div>
   </div>
 </dialog>
-<dialog id="new-dialog"><div class="dialog-heading"><h2>新規</h2><button class="icon-btn" data-close aria-label="新規作成を閉じる">×</button></div><label>プロジェクト名<input id="new-name" value="はじめてのスプライト" maxlength="80"></label><div class="field-pair"><label>幅<input id="new-width" type="number" min="1" max="256" value="64"></label><label>高さ<input id="new-height" type="number" min="1" max="256" value="64"></label></div><button id="create-project" class="primary full">作成</button></dialog>
+<dialog id="new-dialog"><div class="dialog-heading"><h2>新規</h2><button class="icon-btn" data-close aria-label="新規作成を閉じる">×</button></div><label>プロジェクト名<input id="new-name" value="はじめてのスプライト" maxlength="80"></label><div class="field-pair"><label>幅<input id="new-width" type="number" min="1" max="256" value="128"></label><label>高さ<input id="new-height" type="number" min="1" max="256" value="128"></label></div><button id="create-project" class="primary full">作成</button></dialog>
 <dialog id="reference-dialog"><div class="dialog-heading"><h2>元画像</h2><button class="icon-btn" data-close aria-label="元画像を閉じる">×</button></div><div class="reference-image checker"><img id="reference-image" alt="変換前の元画像"></div><p class="small-note">元画像はJSONに含まれません。</p></dialog>
 <dialog id="prompt-dialog" aria-labelledby="prompt-title">
   <div class="dialog-heading"><div><h2 id="prompt-title">AI指示例</h2></div><button class="icon-btn" data-close aria-label="指示例を閉じる">×</button></div>
