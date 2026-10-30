@@ -126,8 +126,8 @@
         <p class="ai-check"><strong>確認：</strong>全16コマを見て、AIが必要な箇所を修正済みであること。顔・衣装が1の見本と同じ密度で読め、目・剣・輪郭が通常サイズでも明瞭で、修正で別の部位を壊していないこと。点を数個足したことだけで完了にせず、元のPNGと修正した16コマのJSONを保存します。</p>
       </li>
       <li><h3>戦闘シーンを作成</h3>
-        <p>「動き」→「戦闘シーン」。強さ＝「全力コンボ」、ステージ＝好みで選択。「斬撃エフェクト」はオン、「ビーム」と「残像」はオフ。「画面揺れ」は希望に合わせ、「戦闘シーンを作成」を押します。</p>
-        <p class="ai-check"><strong>確認：</strong>64 FRAMES、3.12秒になること。キャラクターは透過で編集でき、背景・敵・斬撃などのシーン演出はプレビュー用の別レイヤーにあること。</p>
+        <p>「動き」→「戦闘シーン」。強さ＝「全力コンボ」、ステージ＝好みで選択。「足元の影」と「斬撃エフェクト」はオン、「ビーム」と「残像」はオフ。「画面揺れ」は希望に合わせ、「戦闘シーンを作成」を押します。</p>
+        <p class="ai-check"><strong>確認：</strong>64 FRAMES、3.12秒になること。キャラクターと足元の影は透過レイヤーで編集でき、背景・敵・斬撃などのシーン演出はプレビュー用の別レイヤーにあること。</p>
       </li>
       <li><h3>再生して仕上げ</h3>
         <p>「動き」の再生ボタンで1周以上確認します。手足・武器の欠け、顔や色のちらつき、不要な残像、最初と最後のつながりを確認し、気になるコマを「編集」で直します。</p>
@@ -135,7 +135,7 @@
       </li>
       <li><h3>透過GIFを書き出し・確認</h3>
         <p>上の「書き出し」→出力倍率＝2×、背景＝「透過」、「背景・敵を含める」＝オフを確認し、「GIF アニメーション」を押します。2×は512×352px、4×は1024×704pxです。</p>
-        <p class="ai-check"><strong>完了条件：</strong>保存したGIFを開いて再生できること。輪郭・陰影・色のまとまりがドット絵として仕上がり、キャラクターだけが透明背景で動くこと。背景・敵・ビーム・残像が入らず、ループに欠けやちらつきがないこと。GIFが保存できたことと、ドット絵の作画ができたことを別々に確認し、元の16ポーズと完成版のJSON、GIFを渡します。</p>
+        <p class="ai-check"><strong>完了条件：</strong>保存したGIFを開いて再生できること。輪郭・陰影・色のまとまりがドット絵として仕上がり、キャラクターと足元の影が透明背景で動き、跳躍中も影が地面に残ること。背景・敵・ビーム・残像が入らず、ループに欠けやちらつきがないこと。GIFが保存できたことと、ドット絵の作画ができたことを別々に確認し、元の16ポーズと完成版のJSON、GIFを渡します。</p>
         <p>JSONは編集用データで、「開く」から編集を再開できます。GIFを使うだけならJSONの操作は不要です。元画像はJSONに含まれません。</p>
       </li>
     </ol>
@@ -176,7 +176,7 @@
   <p class="action-intro">透過ポーズ2〜16コマ / 出力256×176px</p>
   <p id="action-source-info" class="mono action-source"></p>
   <div class="field-pair"><label>ステージ<select id="action-scene"><option value="beach">海辺</option><option value="night">夜</option></select></label><label>強さ<select id="action-intensity"><option value="1">軽快</option><option value="2">激しい</option><option value="3" selected>全力コンボ</option></select></label></div>
-  <div class="action-switches"><label class="checkbox-label"><input id="action-ghosts" type="checkbox">残像</label><label class="checkbox-label"><input id="action-effects" type="checkbox" checked>斬撃エフェクト</label><label class="checkbox-label"><input id="action-beam" type="checkbox">ビーム</label><label class="checkbox-label"><input id="action-camera" type="checkbox" checked>画面揺れ</label></div>
+  <div class="action-switches"><label class="checkbox-label"><input id="action-shadow" type="checkbox" checked>足元の影</label><label class="checkbox-label"><input id="action-ghosts" type="checkbox">残像</label><label class="checkbox-label"><input id="action-effects" type="checkbox" checked>斬撃エフェクト</label><label class="checkbox-label"><input id="action-beam" type="checkbox">ビーム</label><label class="checkbox-label"><input id="action-camera" type="checkbox" checked>画面揺れ</label></div>
   <button id="create-action" class="primary full">戦闘シーンを作成</button><p id="action-status" class="small-note" role="status"></p>
 </dialog>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>

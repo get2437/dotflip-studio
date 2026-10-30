@@ -6,7 +6,7 @@ import { newFrame, setPixel, rgba, serializeProject, parseProject } from '../app
 test('action enlargement keeps low-resolution source pixels on an integer grid',()=>{
   const f=newFrame(64,64);for(let y=30;y<32;y++)for(let x=30;x<32;x++)setPixel(f.pixels,64,64,x,y,rgba('#ff0000'));
   const source={name:'pixel grid',width:64,height:64,palette:['#ff0000'],frames:[f,structuredClone(f)]};
-  const project=createActionProject(source,{effects:false,camera:false});
+  const project=createActionProject(source,{effects:false,camera:false,shadow:false});
   for(const frame of project.frames)assert.equal(frame.pixels.filter((v,i)=>i%4===3&&v===255).length,16,'2x2 source pixels must remain four 2x2 blocks');
 });
 
@@ -33,6 +33,31 @@ test('alpha extraction keeps full figures across grid lines, ignores debris and 
   assert.equal(spriteBounds(p,w,h,2,1,1)[0].x,3);assert.throws(()=>spriteBounds(p,w,h,3,1,3),/2体/);
 });
 function source(){return {name:'fighter-poses',width:32,height:32,palette:['#e0a050','#405080'],frames:Array.from({length:16},(_,i)=>{const f=newFrame(32,32);for(let y=8;y<27;y++)for(let x=10;x<16+(i%5);x++)setPixel(f.pixels,32,32,x,y,rgba(i%2?'#405080':'#e0a050'));return f;})};}
+test('ground shadow is included by default without baking in the scene or changing the figure',()=>{
+  const input=source(),before=serializeProject(input),options={effects:false,camera:false};
+  const defaults=createActionProject(input,options),enabled=createActionProject(input,{...options,shadow:true}),disabled=createActionProject(input,{...options,shadow:false});
+  assert.deepEqual(defaults,enabled);assert.deepEqual(serializeProject(input),before);
+  for(let i=0;i<64;i++){
+    const a=defaults.frames[i],b=disabled.frames[i];let added=0;
+    assert.deepEqual(a.scenePixels,b.scenePixels);
+    for(let p=0;p<a.pixels.length;p+=4){
+      if(b.pixels[p+3])assert.deepEqual(a.pixels.subarray(p,p+4),b.pixels.subarray(p,p+4),'shadow must stay behind the figure');
+      else if(a.pixels[p+3]){
+        const y=Math.floor(p/4/256);assert.ok(y>=143&&y<=149);
+        assert.deepEqual(Array.from(a.pixels.subarray(p,p+4)),rgba('#555d63'));added++;
+      }
+    }
+    assert.ok(added>0,'each exported frame must retain a visible ground shadow');
+    assert.equal(a.pixels[3],0,'the surrounding canvas must stay transparent');
+    assert.equal(a.duration,b.duration);
+  }
+  assert.deepEqual(defaults.frames[0].pixels,defaults.frames.at(-1).pixels);
+  const addedWidth=index=>{
+    const xs=[];for(let p=0;p<defaults.frames[index].pixels.length;p+=4)if(defaults.frames[index].pixels[p+3]&&!disabled.frames[index].pixels[p+3])xs.push(p/4%256);
+    return Math.max(...xs)-Math.min(...xs)+1;
+  };
+  assert.ok(addedWidth(28)<addedWidth(0),'jump shadow must shrink while remaining at ground height');
+});
 test('action project is bounded, editable, deterministic and loops at the same guard pose',()=>{
   const input=source(),before=serializeProject(input),a=createActionProject(input,{intensity:3}),b=createActionProject(input,{intensity:3});
   assert.equal(a.width,256);assert.equal(a.height,176);assert.equal(a.frames.length,64);assert.ok(a.palette.length<=96);

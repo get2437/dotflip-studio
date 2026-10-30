@@ -284,7 +284,7 @@ $('create-action').onclick=safe(async()=>{
   const button=$('create-action');button.disabled=true;button.textContent='生成中…';
   try{
     await new Promise(r=>requestAnimationFrame(r));
-    const project=createActionProject(state.project,{intensity:Number($('action-intensity').value),scene:$('action-scene').value,effects:$('action-effects').checked,ghosts:$('action-ghosts').checked,camera:$('action-camera').checked,beam:$('action-beam').checked});
+    const project=createActionProject(state.project,{intensity:Number($('action-intensity').value),scene:$('action-scene').value,effects:$('action-effects').checked,ghosts:$('action-ghosts').checked,camera:$('action-camera').checked,beam:$('action-beam').checked,shadow:$('action-shadow').checked});
     mutate(()=>{state.project=project;state.active=0;state.preview=0;state.previewTime=0;state.selection=null;state.cursor=null;state.zoom=null;state.reference=false;});
     $('action-dialog').close();selectMobileView('editor');toast(`${project.frames.length}コマを生成`);
   }catch(e){$('action-status').textContent=e.message;throw e;}

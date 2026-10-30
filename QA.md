@@ -28,6 +28,8 @@ The verifier compares every decoded GIF frame against the source RGBA data, incl
 
 The bundled SURF STRIKE sample was exported through the app UI and compared with its editable 64-frame project. All frame pixels and durations matched. The GIF is 1024×704px and lasts 3.12 seconds. The sample contains no afterimage copies of the character.
 
+Action creation now includes the ground shadow in the transparent character layer by default. The visible “足元の影” checkbox can disable it before generation. The shadow stays at floor height, narrows during jumps, and sits behind the figure. Tests verify that it is present in all 64 frames, preserves every figure pixel and timing, and does not include the background or enemy in default exports. A real UI run regenerated the 128px reference action and saved a 512×352 transparent GIF; all 64 decoded frames and timings matched its project, and every existing character pixel matched the earlier action exactly.
+
 ## Manual checks
 
 The Japanese UI has been exercised in Chromium at 517×509 and 1440×1050 viewport sizes. Tested operations include image import, transparent sprite extraction, 16-pose conversion, 64-frame action creation, project save/reopen, GIF/PNG/sheet export, sample loading, and autosave restoration. Small dialog windows scroll internally.

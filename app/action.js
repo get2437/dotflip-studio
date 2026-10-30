@@ -109,7 +109,7 @@ export function createActionProject(source, options={}) {
   if(source.frames.length<2||source.frames.length>16)throw new Error('アクション演出には、透過背景の連続ポーズを2〜16コマ用意してください。');
   if(!source.frames.every(f=>f.pixels.some((v,i)=>i%4===3&&v<128)))throw new Error('キャラクターだけを重ねるため、全コマに透過背景のポーズを用意してください。');
   if(!source.frames.every(f=>f.pixels.some((v,i)=>i%4===3&&v>=128)))throw new Error('空のコマがあります。各コマにキャラクターを描いてください。');
-  const intensity=clamp(Number(options.intensity)||2,1,3),effects=options.effects!==false,ghosts=options.ghosts===true,camera=options.camera!==false,beam=options.beam===true;
+  const intensity=clamp(Number(options.intensity)||2,1,3),effects=options.effects!==false,ghosts=options.ghosts===true,camera=options.camera!==false,beam=options.beam===true,shadow=options.shadow!==false;
   const poses=source.frames,n=poses.length,steps=4,C=COLORS;
   const roots=[[67,0],[58,4],[131,0],[145,0],[141,-5],[101,3],[111,-15],[151,-32],[149,-25],[142,-20],[137,4],[99,1],[72,3],[126,0],[94,3],[67,0]];
   const hits=new Set([2,3,4,7,8,9,10,13]),frames=[];
@@ -122,7 +122,9 @@ export function createActionProject(source, options={}) {
     background(f.pixels,options.scene==='night');
     const recoil=impact?(3-sub)*(2+intensity):0;
     drone(f.pixels,202+recoil,104+(slot===4?-14:slot===7||slot===8?-10:0),impact);
-    d.ellipse(x,FLOOR-2,24+Math.min(0,y)*.25,3,C.floor);
+    // Keep the ground shadow with the transparent character export, beneath the
+    // figure. Its centre stays on the floor as the airborne figure rises.
+    if(shadow)painter(character).ellipse(x,FLOOR-2,24+Math.min(0,y)*.25,3,C.floor);
     if(effects&&slot>0&&slot<15){
       for(let k=0;k<6;k++){const sy=38+((k*23+slot*7+sub*4)%90);d.stroke(7+(k%2)*9,sy,43+k%3*14,sy,C.foam);}
       if([2,3,6,7,8,9,13].includes(slot))for(let k=0;k<6;k++)d.stroke(x-45-k*5,FLOOR-12-k*5+y,x-20,FLOOR-14-k*5+y,k%2?C.cyan:C.cloud);
