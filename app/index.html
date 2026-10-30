@@ -75,6 +75,7 @@
       <div class="selection-bar" id="selection-bar" hidden><span id="selection-coords"></span><button data-shift="-1,0" aria-label="選択範囲を左に1px移動">←</button><button data-shift="0,-1" aria-label="選択範囲を上に1px移動">↑</button><button data-shift="0,1" aria-label="選択範囲を下に1px移動">↓</button><button data-shift="1,0" aria-label="選択範囲を右に1px移動">→</button><button id="flip-x">左右反転</button><button id="clear-selection">解除</button></div>
     </div>
     <div class="canvas-status"><div><span id="tool-name">鉛筆</span><span class="mono" id="pixel-position">X — &nbsp; Y —</span><span id="selection-status"></span><label id="reference-opacity-label" hidden>下絵<input id="reference-opacity" type="range" min="10" max="80" value="35" aria-label="下絵の不透明度"></label></div><div class="zoom-controls"><button id="zoom-out" aria-label="縮小">−</button><button id="zoom-fit" class="mono" aria-label="キャンバスを全体表示">FIT</button><button id="zoom-in" aria-label="拡大">＋</button></div></div>
+    <details class="pixel-detail" id="pixel-detail"><summary>座標編集</summary><div class="pixel-detail-body"><div class="pixel-detail-fields"><div class="pixel-detail-point"><label>X<input id="detail-x" type="number" min="0" max="63" step="1" value="32" aria-label="編集するピクセルのX座標"></label><label>Y<input id="detail-y" type="number" min="0" max="63" step="1" value="24" aria-label="編集するピクセルのY座標"></label><button id="inspect-pixel" class="secondary">表示</button></div><label>描画色<input id="detail-color" type="text" value="#efa45c" maxlength="7" spellcheck="false" aria-label="座標編集の描画色"></label><output id="detail-readout" class="mono" aria-live="polite"></output><div class="pixel-detail-actions"><button id="paint-pixel" class="secondary">1px描く</button><button id="erase-pixel" class="secondary">1px消す</button></div></div><canvas id="detail-canvas" width="252" height="252" aria-label="ピクセル拡大図。クリックで座標を指定。"></canvas></div></details>
     <details class="mobile-colors" id="mobile-colors"><summary><span>描画色</span><i id="mobile-current-color"></i><span id="mobile-color-code" class="mono">#efa45c</span><span aria-hidden="true">⌄</span></summary><div id="editor-palette"></div></details>
     <div class="timeline"><div class="timeline-heading"><div><h2>コマ<span id="frame-total">8 FRAMES</span></h2></div><div class="frame-actions"><button id="frame-left" class="icon-btn" title="コマを前へ並べ替え" aria-label="コマを前へ並べ替え">←</button><button id="frame-right" class="icon-btn" title="コマを後ろへ並べ替え" aria-label="コマを後ろへ並べ替え">→</button><button id="duplicate-frame" class="icon-btn" title="コマを複製 (Ctrl+D)" aria-label="コマを複製"><svg><use href="#i-copy"/></svg></button><button id="delete-frame" class="icon-btn" title="コマを削除" aria-label="コマを削除"><svg><use href="#i-trash"/></svg></button></div></div><div class="frame-strip" id="frame-strip" aria-label="アニメーションのコマ"></div><div class="timeline-bottom"><span><span class="accent-square"></span><span id="active-frame-label">フレーム 01</span></span><label>表示時間 <input id="frame-duration" type="number" min="20" max="5000" step="10" value="150" aria-label="現在のコマの表示時間"> ms</label></div></div>
   </section>
@@ -101,7 +102,7 @@
 <dialog id="ai-guide-dialog" aria-labelledby="ai-guide-title">
   <div class="dialog-heading"><h2 id="ai-guide-title">AI用手順</h2><button class="icon-btn" data-close aria-label="AI用手順を閉じる">×</button></div>
   <div id="ai-workflow" class="ai-workflow">
-    <p>元画像から乱舞の透過GIFを作る手順。ポーズの描き起こしはAI側の画像生成を使い、変換・編集・保存はこのサイトをコンピュータユーズで操作します。</p>
+    <p>元画像から乱舞の透過GIFを作る手順。ポーズの描き起こしはAI側の画像生成を使い、変換後のピクセル修正・全コマの確認・保存まで、AIがこのサイトをコンピュータユーズで操作します。</p>
     <p>スマホ幅では下の「画像」「編集」「動き」で切り替えます。16コマの透過ポーズが用意できている場合は2から始めます。</p>
     <ol class="ai-steps">
       <li><h3>16ポーズの素材を用意</h3>
@@ -116,10 +117,12 @@
         <p>専用エンジンが縮小前に面と陰影を整理し、縮小後に孤立点と輪郭を補正します。すでにドットで作画した素材を保つときは「縮小・減色のみ」と「ニアレスト」を使います。エンジンは<a href="https://github.com/AleksTomatoOnion/Pixel_Art_Converter" target="_blank" rel="noopener noreferrer">Pixel-Art Converter</a>の処理を組み込んだもので、このブラウザ内で動きます。</p>
         <p class="ai-check"><strong>確認：</strong>「編集」のコマ数が16 FRAMESになり、各コマに1体だけ表示されること。複数のPNGを読み込む場合は01〜16の名前順に用意し、「分割して読み込む」をオフにします。</p>
       </li>
-      <li><h3>16コマを確認・元データを保存</h3>
-        <p>「編集」でコマを順に選び、顔・髪・衣装の色、全身と武器の欠け、縮尺と足元を確認します。必要なら「書き出し」→4×→「PNG 現在のコマ」で拡大図を確認。輪郭の段差が整い、髪や布の陰影が少数の色で読み取れることを確かめ、不要な点や穴を描き直します。</p>
+      <li><h3>AIが16コマのピクセルを修正・保存</h3>
+        <p>「編集」で全コマを順に選び、元画像と見比べます。AI自身が目・顔・髪・衣装・剣の潰れ、輪郭の孤立点や穴を見つけ、鉛筆・消しゴム・直線などで描き直します。修正作業を利用者へ渡さず、各コマで必要なピクセルを実際に編集してください。</p>
+        <p>精密な修正は「座標編集」を開き、X・Yを入れて「表示」。数字付き拡大図と現在の色を見て、描画色を#RRGGBBで指定し「1px描く」か「1px消す」。左上が0,0です。拡大図のクリックでも座標を指定でき、誤った変更は「元に戻す」で戻せます。目や剣先を描く前に、そのコマの向き・顔の範囲・武器の線を確認します。</p>
+        <p>同じ特徴を全コマで保ち、最初と最後の構えをそろえます。修正前後を拡大と通常サイズで見比べ、必要なら「書き出し」→4×→「PNG 現在のコマ」でも確認します。</p>
         <p>プロジェクト名を「キャラ名-poses」などに入力し、欄外をクリックして確定。「保存」で元の16ポーズを.dotflip.jsonとして保存します。</p>
-        <p class="ai-check"><strong>確認：</strong>ドット絵としての輪郭と陰影が読めることを確認してから、元のPNGと16コマのJSONを保存します。変換結果を必要に応じて手直しし、戦闘の配置・タイミング処理へ進みます。</p>
+        <p class="ai-check"><strong>確認：</strong>全16コマを見て、AIが必要な箇所を修正済みであること。目・剣・輪郭が通常サイズでも読め、修正で別の部位を壊していないことを確認してから、元のPNGと修正した16コマのJSONを保存します。</p>
       </li>
       <li><h3>戦闘シーンを作成</h3>
         <p>「動き」→「戦闘シーン」。強さ＝「全力コンボ」、ステージ＝好みで選択。「斬撃エフェクト」はオン、「ビーム」と「残像」はオフ。「画面揺れ」は希望に合わせ、「戦闘シーンを作成」を押します。</p>

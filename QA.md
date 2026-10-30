@@ -32,4 +32,6 @@ The bundled SURF STRIKE sample was exported through the app UI and compared with
 
 The Japanese UI has been exercised in Chromium at 517×509 and 1440×1050 viewport sizes. Tested operations include image import, transparent sprite extraction, 16-pose conversion, 64-frame action creation, project save/reopen, GIF/PNG/sheet export, sample loading, and autosave restoration. Small dialog windows scroll internally.
 
+The coordinate editor supports Computer Use pixel corrections with a numbered 16×16 magnifier, X/Y inputs, hex colour, single-pixel paint/erase, and undo/redo. A real UI session reviewed and corrected all 16 poses. Exported RGBA data matched the recorded UI paint actions exactly, with the shared palette, transparency and frame durations preserved. Pixel corrections are performed by the external agent through visible controls; the website does not call an AI model.
+
 To check a packaged release, extract its ZIP to a new directory, launch `start-studio.cmd` on Windows or `npm start` on other systems, and open the printed loopback URL. The bundled build must start without installing packages or contacting a remote API.

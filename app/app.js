@@ -11,6 +11,7 @@ const icons=name=>`<svg><use href="#i-${name}"/></svg>`;
 const toolNames={pencil:'鉛筆',eraser:'消しゴム',fill:'塗りつぶし',picker:'スポイト',select:'範囲選択',line:'直線',rect:'四角形',pan:'画面移動'};
 const state={project:createDemo(),active:0,tool:'pencil',color:'#efa45c',brush:1,grid:true,onion:false,reference:false,zoom:null,selection:null,cursor:null,playing:true,preview:0,previewTime:0,history:[],redo:[],source:[],drag:null,sample:true};
 let saveTimer,toastTimer,dbPromise,persistGeneration=0,lastDimensions='';
+let detailBounds={x:0,y:0,width:16,height:16};
 const canvas=$('editor-canvas'),ctx=canvas.getContext('2d'),scratch=document.createElement('canvas'),sctx=scratch.getContext('2d');
 const pointerSession=new PointerSession(),mobileLayout=matchMedia('(max-width:1023px)');
 function selectMobileView(view){
@@ -86,10 +87,54 @@ function renderEditor(){
   if(state.selection){const r=state.selection;ctx.fillStyle='#f6bb7220';ctx.fillRect(r.x*z,r.y*z,r.w*z,r.h*z);ctx.strokeStyle='#fff0bd';ctx.lineWidth=1;ctx.setLineDash([4,3]);ctx.strokeRect(r.x*z+.5,r.y*z+.5,r.w*z-1,r.h*z-1);ctx.setLineDash([]);}
   if(state.cursor&&z>=3){const {x,y}=state.cursor;ctx.strokeStyle='#fff8de';ctx.lineWidth=1;ctx.strokeRect(x*z+.5,y*z+.5,z-1,z-1);}
   $('zoom-fit').textContent=state.zoom===null?'FIT':`${z}×`;
+  renderPixelDetail();
   const rulerValues=(n)=>{const steps=Math.min(8,Math.max(2,Math.ceil(n/8)));return Array.from({length:steps+1},(_,i)=>Math.round(i*(n-1)/steps));};
   $('ruler-x').replaceChildren(...rulerValues(w).map(n=>{const span=document.createElement('span');span.textContent=n;return span;}));
   $('ruler-y').replaceChildren(...rulerValues(h).map(n=>{const span=document.createElement('span');span.textContent=n;return span;}));
 }
+function detailPoint(){
+  const x=Number($('detail-x').value),y=Number($('detail-y').value),p=state.project;
+  if(!$('detail-x').value.trim()||!$('detail-y').value.trim()||!Number.isInteger(x)||!Number.isInteger(y)||x<0||y<0||x>=p.width||y>=p.height)throw new Error(`座標はX 0〜${p.width-1}、Y 0〜${p.height-1}の整数で指定してください。`);
+  return {x,y};
+}
+function renderPixelDetail(){
+  if(!$('pixel-detail').open)return;
+  const p=state.project,pt=state.cursor||{x:clamp(Number($('detail-x').value)||0,0,p.width-1),y:clamp(Number($('detail-y').value)||0,0,p.height-1)};
+  if(document.activeElement!==$('detail-x'))$('detail-x').value=pt.x;
+  if(document.activeElement!==$('detail-y'))$('detail-y').value=pt.y;
+  const width=Math.min(16,p.width),height=Math.min(16,p.height),x=clamp(pt.x-8,0,p.width-width),y=clamp(pt.y-8,0,p.height-height);
+  detailBounds={x,y,width,height};
+  const c=$('detail-canvas'),dc=c.getContext('2d'),margin=28,tile=14;
+  dc.fillStyle='#242c2e';dc.fillRect(0,0,c.width,c.height);dc.font='7px monospace';dc.textAlign='center';dc.textBaseline='middle';
+  for(let yy=0;yy<height;yy++)for(let xx=0;xx<width;xx++){
+    const i=((y+yy)*p.width+x+xx)*4,a=frame().pixels[i+3];
+    dc.fillStyle=a?hex(frame().pixels.subarray(i,i+4)):((xx+yy)%2?'#c8d3b9':'#d4ddc7');dc.fillRect(margin+xx*tile,margin+yy*tile,tile,tile);
+    dc.strokeStyle='#23342135';dc.strokeRect(margin+xx*tile+.5,margin+yy*tile+.5,tile,tile);
+  }
+  dc.fillStyle='#c8d3b9';for(let xx=0;xx<width;xx++)dc.fillText(String(x+xx),margin+(xx+.5)*tile,16);
+  for(let yy=0;yy<height;yy++)dc.fillText(String(y+yy),13,margin+(yy+.5)*tile);
+  dc.strokeStyle='#fff';dc.lineWidth=2;dc.strokeRect(margin+(pt.x-x)*tile+1,margin+(pt.y-y)*tile+1,tile-2,tile-2);
+  const i=(pt.y*p.width+pt.x)*4;$('detail-readout').textContent=`X ${pt.x} · Y ${pt.y} · ${frame().pixels[i+3]?hex(frame().pixels.subarray(i,i+4)):'透過'}`;
+}
+function inspectPixel(){state.cursor=detailPoint();showPosition(state.cursor);renderEditor();}
+$('pixel-detail').ontoggle=renderPixelDetail;
+$('inspect-pixel').onclick=safe(inspectPixel);
+for(const id of ['detail-x','detail-y'])$(id).onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('inspect-pixel').click();}};
+$('detail-canvas').onclick=e=>{
+  const r=e.currentTarget.getBoundingClientRect(),xx=Math.floor(((e.clientX-r.left)/r.width*252-28)/14),yy=Math.floor(((e.clientY-r.top)/r.height*252-28)/14);
+  if(xx<0||yy<0||xx>=detailBounds.width||yy>=detailBounds.height)return;
+  $('detail-x').value=detailBounds.x+xx;$('detail-y').value=detailBounds.y+yy;inspectPixel();
+};
+function detailColor(){const c=$('detail-color').value.trim();if(!/^#[\da-f]{6}$/i.test(c))throw new Error('描画色は #RRGGBB で指定してください。');return c;}
+$('detail-color').onchange=safe(()=>chooseColor(detailColor()));
+function editPixel(erase){
+  const pt=detailPoint(),p=state.project,r=state.selection;
+  if(r&&(pt.x<r.x||pt.y<r.y||pt.x>=r.x+r.w||pt.y>=r.y+r.h))throw new Error('座標が選択範囲の外です。');
+  const color=erase?[0,0,0,0]:rgba(detailColor());state.cursor=pt;
+  if(!erase)chooseColor(detailColor());
+  mutate(()=>setPixel(frame().pixels,p.width,p.height,pt.x,pt.y,color,1,r));showPosition(pt);
+}
+$('paint-pixel').onclick=safe(()=>editPixel(false));$('erase-pixel').onclick=safe(()=>editPixel(true));
 function renderFrames(){
   const strip=$('frame-strip'),scroll=strip.scrollLeft,{width:w,height:h,frames}=state.project;
   strip.replaceChildren();
@@ -107,6 +152,7 @@ function renderPalette(){
   state.project.palette.forEach(c=>{const b=document.createElement('button');b.className='swatch'+(c.toLowerCase()===state.color.toLowerCase()?' active':'');b.style.background=c;b.dataset.color=c;b.title=c;b.setAttribute('aria-label',`描画色 ${c}`);b.setAttribute('aria-pressed',String(c.toLowerCase()===state.color.toLowerCase()));el.append(b);});
   $('palette-count').textContent=state.project.palette.length+' COLORS';
   $('color-hex').value=state.color;$('color-picker').value=state.color;$('color-swatch').style.background=state.color;
+  if(document.activeElement!==$('detail-color'))$('detail-color').value=state.color;
   $('mobile-current-color').style.background=state.color;$('mobile-color-code').textContent=state.color;
 }
 function renderSelection(){
@@ -121,6 +167,7 @@ function render(){
     const preset=p.width===p.height&&[32,48,64,96,128,256].includes(p.width);
     $('resolution').value=preset?String(p.width):'custom';$('custom-size').hidden=preset;
     $('custom-width').value=p.width;$('custom-height').value=p.height;$('resolution-label').textContent=`${p.width} × ${p.height}`;lastDimensions=dimensions;
+    for(const [id,size] of [['detail-x',p.width],['detail-y',p.height]]){$(id).max=size-1;$(id).value=clamp(Number($(id).value)||0,0,size-1);}
   }
   if(document.activeElement!==$('project-name'))$('project-name').value=p.name;
   $('sample-badge').hidden=!state.sample;$('canvas-size').textContent=`${p.width} × ${p.height} PX`;
