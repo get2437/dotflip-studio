@@ -12,7 +12,7 @@ export const rgba = hex => {
 };
 export const hex = c => '#' + Array.from(c).slice(0,3).map(v=>v.toString(16).padStart(2,'0')).join('');
 export function newFrame(w,h,duration=125) { return { pixels: new Uint8ClampedArray(w*h*4), duration }; }
-export function copyFrame(f) { return { pixels: new Uint8ClampedArray(f.pixels), duration: f.duration }; }
+export function copyFrame(f) { return { pixels: new Uint8ClampedArray(f.pixels), duration: f.duration, ...(f.scenePixels ? {scenePixels:new Uint8ClampedArray(f.scenePixels)} : {}) }; }
 export function cloneProject(p) { return { ...p, palette: [...p.palette], frames: p.frames.map(copyFrame) }; }
 export function setPixel(pixels,w,h,x,y,color,size=1,selection=null) {
   const off = Math.floor((size-1)/2);
@@ -195,7 +195,7 @@ export function motionFrames(frame,w,h,type,count=8,amount=2,selection=null,fill
       const dy=type==='float'?Math.round(-Math.sin(t)*amount):type==='bounce'?-Math.round(Math.abs(Math.sin(t))*amount):0;
       p=transform(frame.pixels,w,h,{dx,dy,selection:type==='sway'?selection:null});
     }
-    result.push({pixels:p,duration:frame.duration});
+    result.push({pixels:p,duration:frame.duration,...(frame.scenePixels?{scenePixels:new Uint8ClampedArray(frame.scenePixels)}:{})});
   }
   return result;
 }
@@ -204,7 +204,7 @@ function encodeBytes(p) {
 }
 function decodeBytes(s) { const raw=atob(s);return Uint8ClampedArray.from(raw,c=>c.charCodeAt(0)); }
 export function serializeProject(p) {
-  return { format:'dotflip', version:1, name:p.name, width:p.width, height:p.height, palette:p.palette, frames:p.frames.map(f=>({duration:f.duration,rgba:encodeBytes(f.pixels)})) };
+  return { format:'dotflip', version:1, name:p.name, width:p.width, height:p.height, palette:p.palette, frames:p.frames.map(f=>({duration:f.duration,rgba:encodeBytes(f.pixels),...(f.scenePixels?{sceneRgba:encodeBytes(f.scenePixels)}:{})})) };
 }
 export function parseProject(data) {
   if(!data||data.format!=='dotflip'||data.version!==1)throw new Error('対応するDOTFLIPプロジェクトではありません。');
@@ -217,7 +217,13 @@ export function parseProject(data) {
     let pixels;try{pixels=decodeBytes(f.rgba);}catch{throw new Error('ピクセルデータを読み込めません。');}
     if(pixels.length!==w*h*4)throw new Error('ピクセルデータが壊れています。');
     if(!Number.isFinite(f.duration)||f.duration<20||f.duration>LIMITS.duration)throw new Error('コマの表示時間が不正です。');
-    return {pixels,duration:Math.round(f.duration)};
+    let scenePixels;
+    if(f.sceneRgba!==undefined){
+      if(typeof f.sceneRgba!=='string'||f.sceneRgba.length!==Math.ceil(w*h*4/3)*4)throw new Error('背景データの長さが不正です。');
+      try{scenePixels=decodeBytes(f.sceneRgba);}catch{throw new Error('背景データを読み込めません。');}
+      if(scenePixels.length!==w*h*4)throw new Error('背景データが壊れています。');
+    }
+    return {pixels,duration:Math.round(f.duration),...(scenePixels?{scenePixels}:{})};
   });
   return {name:String(data.name||'無題のスプライト').slice(0,80),width:w,height:h,palette:[...data.palette],frames};
 }

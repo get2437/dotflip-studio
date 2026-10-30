@@ -30,8 +30,9 @@ test('action project is bounded, editable, deterministic and loops at the same g
   const input=source(),before=serializeProject(input),a=createActionProject(input,{intensity:3}),b=createActionProject(input,{intensity:3});
   assert.equal(a.width,256);assert.equal(a.height,176);assert.equal(a.frames.length,64);assert.ok(a.palette.length<=96);
   assert.deepEqual(a.frames[0].pixels,a.frames.at(-1).pixels);assert.notDeepEqual(a.frames[8].pixels,a.frames[20].pixels);
+  assert.deepEqual(a.frames[0].scenePixels,a.frames.at(-1).scenePixels);
   assert.deepEqual(a,b);assert.deepEqual(serializeProject(input),before);assert.deepEqual(parseProject(serializeProject(a)),a);
-  for(const f of a.frames){assert.equal(f.pixels.length,256*176*4);assert.ok(f.pixels.every((v,i)=>i%4!==3||v===255));assert.equal(f.duration%10,0);assert.ok(f.duration>=20);}
+  for(const f of a.frames){assert.equal(f.pixels.length,256*176*4);assert.ok(f.pixels.some((v,i)=>i%4===3&&v===0));assert.ok(f.pixels.some((v,i)=>i%4===3&&v===255));assert.ok(f.scenePixels.every((v,i)=>i%4!==3||v===255));assert.equal(f.duration%10,0);assert.ok(f.duration>=20);}
 });
 test('effects, ghosts and camera switches change pixels while preserving source poses',()=>{
   const p=source(),full=createActionProject(p),plain=createActionProject(p,{effects:false,ghosts:false,camera:false});
@@ -42,6 +43,19 @@ test('afterimages are absent by default and appear only when explicitly enabled'
   assert.deepEqual(defaults,disabled);
   assert.notDeepEqual(defaults.frames[28].pixels,enabled.frames[28].pixels);
   assert.deepEqual(defaults.frames.map(f=>f.duration),enabled.frames.map(f=>f.duration));
+});
+
+test('beam is off by default and explicit beam settings affect only the optional scene',()=>{
+  const p=source(),defaults=createActionProject(p),disabled=createActionProject(p,{beam:false}),enabled=createActionProject(p,{beam:true});
+  assert.deepEqual(defaults,disabled);
+  assert.notDeepEqual(defaults.frames[52].scenePixels,enabled.frames[52].scenePixels);
+  assert.deepEqual(defaults.frames.map(f=>f.pixels),enabled.frames.map(f=>f.pixels));
+});
+
+test('beam can be selected independently from ordinary slash effects',()=>{
+  const p=source(),plain=createActionProject(p,{effects:false,camera:false}),beam=createActionProject(p,{effects:false,camera:false,beam:true});
+  assert.notDeepEqual(plain.frames[52].scenePixels,beam.frames[52].scenePixels);
+  assert.deepEqual(plain.frames[52].pixels,beam.frames[52].pixels);
 });
 test('action needs a transparent character sequence and accepts short sequences',()=>{
   const p=source();p.frames=p.frames.slice(0,2);assert.equal(createActionProject(p).frames.length,64);

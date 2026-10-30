@@ -1,5 +1,21 @@
 import { GIFEncoder } from './vendor/gifenc.esm.js';
 import { makePalette, indexedPixels, resizeNearest, rgba, clamp } from './core.js';
+// Editable pixels contain the character. The optional scene is used for preview
+// and is included in exports only when explicitly requested.
+export function framePixels(frame,includeScene=false) {
+  if(!includeScene||!frame.scenePixels)return frame.pixels;
+  const result=new Uint8ClampedArray(frame.scenePixels);
+  for(let i=0;i<result.length;i+=4){
+    const a=frame.pixels[i+3]/255,b=result[i+3]/255,alpha=a+b*(1-a);
+    if(!alpha){result.fill(0,i,i+4);continue;}
+    for(let c=0;c<3;c++)result[i+c]=Math.round((frame.pixels[i+c]*a+result[i+c]*b*(1-a))/alpha);
+    result[i+3]=Math.round(alpha*255);
+  }
+  return result;
+}
+export function projectForExport(project,includeScene=false) {
+  return {...project,palette:[...project.palette],frames:project.frames.map(frame=>({duration:frame.duration,pixels:new Uint8ClampedArray(framePixels(frame,includeScene))}))};
+}
 export function encodeGif(project,scale=1,background='transparent') {
   const {width:w,height:h,frames}=project;
   scale=clamp(Math.round(scale),1,8);

@@ -1,6 +1,6 @@
 import { LIMITS, PALETTES, clamp, rgba, hex, newFrame, copyFrame, cloneProject, setPixel, line, floodFill, clearRegion, transform, removeBackground, adjustColors, makePalette, quantize, motionFrames, serializeProject, parseProject } from './core.js';
 import { createDemo } from './demo.js';
-import { sheetMetadata } from './export.js';
+import { sheetMetadata, framePixels, projectForExport } from './export.js';
 import { zipFiles } from './zip.js';
 import { sheetRects, spriteBounds, extractSprite, createActionProject } from './action.js';
 import { fitZoom, PointerSession } from './viewport.js';
@@ -51,7 +51,7 @@ function scheduleSave(){
 }
 function pushHistory(){
   state.history.push(snapshot());state.redo=[];
-  let bytes=0;const sources=new Set();for(let i=state.history.length-1;i>=0;i--){const s=state.history[i];bytes+=s.project.frames.length*s.project.width*s.project.height*4;for(const source of s.source){if(!sources.has(source.bitmap)){sources.add(source.bitmap);bytes+=source.bitmap.width*source.bitmap.height*4;}}if(bytes>48*1024*1024&&i<state.history.length-1){state.history.splice(0,i+1);break;}}
+  let bytes=0;const sources=new Set();for(let i=state.history.length-1;i>=0;i--){const s=state.history[i];bytes+=s.project.frames.reduce((sum,f)=>sum+f.pixels.byteLength+(f.scenePixels?.byteLength||0),0);for(const source of s.source){if(!sources.has(source.bitmap)){sources.add(source.bitmap);bytes+=source.bitmap.width*source.bitmap.height*4;}}if(bytes>48*1024*1024&&i<state.history.length-1){state.history.splice(0,i+1);break;}}
   if(state.history.length>30)state.history.shift();
 }
 function snapshot(){return {project:cloneProject(state.project),active:state.active,sample:state.sample,source:[...state.source]};}
@@ -200,7 +200,7 @@ $('frame-duration').onchange=e=>{const value=Number(e.target.value);if(!Number.i
 function renderPreview(force=false){
   const p=state.project;state.preview=clamp(state.preview,0,p.frames.length-1);
   const i=state.playing?state.preview:state.active;
-  if(force||state.lastPreview!==i){putImage($('preview-canvas').getContext('2d'),p.frames[i].pixels,p.width,p.height);state.lastPreview=i;$('preview-frame').textContent=String(i+1).padStart(2,'0')+' / '+String(p.frames.length).padStart(2,'0');document.querySelectorAll('[data-frame]').forEach(b=>b.classList.toggle('previewing',Number(b.dataset.frame)===i));}
+  if(force||state.lastPreview!==i){putImage($('preview-canvas').getContext('2d'),framePixels(p.frames[i],true),p.width,p.height);state.lastPreview=i;$('preview-frame').textContent=String(i+1).padStart(2,'0')+' / '+String(p.frames.length).padStart(2,'0');document.querySelectorAll('[data-frame]').forEach(b=>b.classList.toggle('previewing',Number(b.dataset.frame)===i));}
 }
 function animate(time){
   if(state.playing){
@@ -236,7 +236,7 @@ $('create-action').onclick=safe(async()=>{
   const button=$('create-action');button.disabled=true;button.textContent='生成中…';
   try{
     await new Promise(r=>requestAnimationFrame(r));
-    const project=createActionProject(state.project,{intensity:Number($('action-intensity').value),scene:$('action-scene').value,effects:$('action-effects').checked,ghosts:$('action-ghosts').checked,camera:$('action-camera').checked});
+    const project=createActionProject(state.project,{intensity:Number($('action-intensity').value),scene:$('action-scene').value,effects:$('action-effects').checked,ghosts:$('action-ghosts').checked,camera:$('action-camera').checked,beam:$('action-beam').checked});
     mutate(()=>{state.project=project;state.active=0;state.preview=0;state.previewTime=0;state.selection=null;state.cursor=null;state.zoom=null;state.reference=false;});
     $('action-dialog').close();selectMobileView('editor');toast(`${project.frames.length}コマを生成`);
   }catch(e){$('action-status').textContent=e.message;throw e;}
@@ -245,12 +245,10 @@ $('create-action').onclick=safe(async()=>{
 $('action-example').onclick=safe(async()=>{
   const button=$('action-example');button.disabled=true;button.textContent='読込中…';
   try{
-    const response=await fetch('./assets/surf-strike.sheet.json');if(!response.ok)throw new Error('サンプルを読み込めませんでした。再度お試しください。');
-    const meta=await response.json(),image=await loadImage('./assets/surf-strike.sheet.png'),w=meta.meta.originalWidth,h=meta.meta.originalHeight;
-    if(meta.scale!==1||w!==256||h!==176||meta.frames.length!==64||image.naturalWidth!==meta.size.width||image.naturalHeight!==meta.size.height)throw new Error('サンプルの形式を確認できませんでした。');
-    const c=document.createElement('canvas');c.width=w;c.height=h;const cx=c.getContext('2d');
-    const frames=meta.frames.map(f=>{cx.clearRect(0,0,w,h);cx.drawImage(image,f.rect.x,f.rect.y,w,h,0,0,w,h);return {pixels:cx.getImageData(0,0,w,h).data,duration:f.duration};});
-    const project={name:meta.name,width:w,height:h,palette:makePalette(frames.map(f=>f.pixels),96),frames};
+    const response=await fetch('./assets/surf-strike.poses.json');if(!response.ok)throw new Error('サンプルを読み込めませんでした。再度お試しください。');
+    const source=parseProject(await response.json());
+    if(source.width!==128||source.height!==128||source.frames.length!==16)throw new Error('サンプルの形式を確認できませんでした。');
+    const project=createActionProject(source,{intensity:3,scene:'beach',effects:true,beam:false,ghosts:false,camera:true});project.name='SURF STRIKE';
     mutate(()=>{state.project=project;state.active=28;state.preview=0;state.previewTime=0;state.zoom=null;state.selection=null;state.cursor=null;state.reference=false;});
     drawToSource();scheduleSave();selectMobileView('editor');toast('サンプルを開きました');
   }finally{button.disabled=false;button.textContent='サンプル（64コマ）';}
@@ -346,21 +344,23 @@ PROMPT_EXAMPLES.forEach(({title,text},index)=>{
 if(mobileLayout.matches)$('export-scale').value='2';
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}}));
-$('export-btn').onclick=()=>{const p=state.project;$('export-name').textContent=p.name;$('export-info').textContent=`${p.width} × ${p.height} PX · ${p.frames.length} FRAMES`;$('sheet-columns').value=Math.min(8,p.frames.length);putImage($('export-preview').getContext('2d'),frame().pixels,p.width,p.height);$('export-dialog').showModal();};
-function exportSettings(){return {scale:Number($('export-scale').value),background:$('export-background').value,columns:clamp(Math.round(Number($('sheet-columns').value)||1),1,state.project.frames.length)};}
+function renderExportPreview(){const p=state.project,c=$('export-preview'),output=renderOutput(framePixels(frame(),!$('scene-option').hidden&&$('export-scene').checked),p.width,p.height,1,$('export-background').value);c.width=p.width;c.height=p.height;c.getContext('2d').drawImage(output,0,0);}
+$('export-btn').onclick=()=>{const p=state.project,hasScene=p.frames.some(f=>f.scenePixels);$('export-name').textContent=p.name;$('export-info').textContent=`${p.width} × ${p.height} PX · ${p.frames.length} FRAMES`;$('sheet-columns').value=Math.min(8,p.frames.length);$('scene-option').hidden=!hasScene;$('export-scene').checked=false;if(hasScene)$('export-background').value='transparent';$('export-status').textContent='';renderExportPreview();$('export-dialog').showModal();};
+$('export-scene').onchange=renderExportPreview;$('export-background').onchange=renderExportPreview;
+function exportSettings(){return {scale:Number($('export-scale').value),background:$('export-background').value,columns:clamp(Math.round(Number($('sheet-columns').value)||1),1,state.project.frames.length),includeScene:!$('scene-option').hidden&&$('export-scene').checked};}
 function renderOutput(p,w,h,scale,bg){const c=document.createElement('canvas');c.width=w*scale;c.height=h*scale;const cx=c.getContext('2d');if(bg!=='transparent'){cx.fillStyle=bg;cx.fillRect(0,0,c.width,c.height);}const temp=document.createElement('canvas');putImage(temp.getContext('2d'),p,w,h);cx.imageSmoothingEnabled=false;cx.drawImage(temp,0,0,c.width,c.height);return c;}
 async function pngBlob(c){return new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(new Error('PNGを作成できませんでした。')),'image/png'));}
-$('export-png').onclick=safe(async()=>{const p=state.project,{scale,background}=exportSettings();download(await pngBlob(renderOutput(frame().pixels,p.width,p.height,scale,background)),filename(p.name)+`-${String(state.active+1).padStart(2,'0')}.png`);$('export-status').textContent='PNGを保存しました';});
+$('export-png').onclick=safe(async()=>{const p=state.project,{scale,background,includeScene}=exportSettings();download(await pngBlob(renderOutput(framePixels(frame(),includeScene),p.width,p.height,scale,background)),filename(p.name)+`-${String(state.active+1).padStart(2,'0')}.png`);$('export-status').textContent='PNGを保存しました';});
 $('export-sheet').onclick=safe(async()=>{
-  const p=state.project,{scale,background,columns}=exportSettings(),meta=sheetMetadata(p,scale,columns);
+  const p=state.project,{scale,background,columns,includeScene}=exportSettings(),meta=sheetMetadata(p,scale,columns);
   const maxSide=16384;if(meta.size.width>maxSide||meta.size.height>maxSide||meta.size.width*meta.size.height>32000000)throw new Error('シートが大きすぎます。倍率を下げるか列数を調整してください。');
   const c=document.createElement('canvas');c.width=meta.size.width;c.height=meta.size.height;const cx=c.getContext('2d');
-  p.frames.forEach((f,i)=>{const r=meta.frames[i].rect;cx.drawImage(renderOutput(f.pixels,p.width,p.height,scale,background),r.x,r.y);});
+  p.frames.forEach((f,i)=>{const r=meta.frames[i].rect;cx.drawImage(renderOutput(framePixels(f,includeScene),p.width,p.height,scale,background),r.x,r.y);});
   const name=filename(p.name);meta.image=name+'.sheet.png';const png=await pngBlob(c);const zip=zipFiles([{name:name+'.sheet.png',data:await png.arrayBuffer()},{name:name+'.sheet.json',data:JSON.stringify(meta,null,2)}]);download(new Blob([zip],{type:'application/zip'}),name+'.spritesheet.zip');$('export-status').textContent='PNG＋JSONを保存しました';
 });
 let exporting=false;
 $('export-gif').onclick=safe(async()=>{
-  if(exporting)return;const {scale,background}=exportSettings(),p=cloneProject(state.project);
+  if(exporting)return;const {scale,background,includeScene}=exportSettings(),p=projectForExport(state.project,includeScene);
   if(p.width*p.height*scale*scale*p.frames.length>48000000)throw new Error('GIFが大きすぎます。出力倍率を下げてください。');
   exporting=true;$('export-gif').disabled=true;$('export-status').classList.add('busy');$('export-status').textContent='GIF出力中…';
   let worker,timer;try{

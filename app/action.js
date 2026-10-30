@@ -97,11 +97,11 @@ function burst(p,x,y,phase,intensity) {
   d.ellipse(x,y,Math.max(2,7-phase*2),Math.max(2,7-phase*2),C.white);
   for(let n=0;n<intensity*3;n++){const a=n*2.4;d.rect(x+Math.cos(a)*(r+5),y+Math.sin(a)*r*.65,2,2,n%2?C.cyan:C.gold);}
 }
-function shake(p, dx, dy) {
+function shake(p, dx, dy, clampEdges=true) {
   if(!dx&&!dy)return p;
   // Clamp the edges so camera shake cannot expose transparent strips.
   const q=new Uint8ClampedArray(p.length);
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const sx=clamp(x-dx,0,W-1),sy=clamp(y-dy,0,H-1);q.set(p.subarray((sy*W+sx)*4,(sy*W+sx)*4+4),(y*W+x)*4);}
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const sx=clampEdges?clamp(x-dx,0,W-1):x-dx,sy=clampEdges?clamp(y-dy,0,H-1):y-dy;if(sx>=0&&sy>=0&&sx<W&&sy<H)q.set(p.subarray((sy*W+sx)*4,(sy*W+sx)*4+4),(y*W+x)*4);}
   return q;
 }
 
@@ -109,7 +109,7 @@ export function createActionProject(source, options={}) {
   if(source.frames.length<2||source.frames.length>16)throw new Error('アクション演出には、透過背景の連続ポーズを2〜16コマ用意してください。');
   if(!source.frames.every(f=>f.pixels.some((v,i)=>i%4===3&&v<128)))throw new Error('キャラクターだけを重ねるため、全コマに透過背景のポーズを用意してください。');
   if(!source.frames.every(f=>f.pixels.some((v,i)=>i%4===3&&v>=128)))throw new Error('空のコマがあります。各コマにキャラクターを描いてください。');
-  const intensity=clamp(Number(options.intensity)||2,1,3),effects=options.effects!==false,ghosts=options.ghosts===true,camera=options.camera!==false;
+  const intensity=clamp(Number(options.intensity)||2,1,3),effects=options.effects!==false,ghosts=options.ghosts===true,camera=options.camera!==false,beam=options.beam===true;
   const poses=source.frames,n=poses.length,steps=4,C=COLORS;
   const roots=[[67,0],[58,4],[131,0],[145,0],[141,-5],[101,3],[111,-15],[151,-32],[149,-25],[142,-20],[137,4],[99,1],[72,3],[126,0],[94,3],[67,0]];
   const hits=new Set([2,3,4,7,8,9,10,13]),frames=[];
@@ -118,7 +118,7 @@ export function createActionProject(source, options={}) {
     const i=Math.round(slot*(n-1)/15),nextSlot=Math.min(15,slot+1);
     const u=sub/steps,ease=u*u*(3-2*u),a=roots[slot],b=roots[nextSlot];
     const x=67+((a[0]+(b[0]-a[0])*ease)-67)*strength,y=(a[1]+(b[1]-a[1])*ease)*strength;
-    const hit=hits.has(slot),impact=hit&&sub<3, f=newFrame(W,H,40),d=painter(f.pixels);
+    const hit=hits.has(slot),impact=hit&&sub<3, f=newFrame(W,H,40),character=new Uint8ClampedArray(W*H*4),d=painter(f.pixels);
     background(f.pixels,options.scene==='night');
     const recoil=impact?(3-sub)*(2+intensity):0;
     drone(f.pixels,202+recoil,104+(slot===4?-14:slot===7||slot===8?-10:0),impact);
@@ -127,21 +127,23 @@ export function createActionProject(source, options={}) {
       for(let k=0;k<6;k++){const sy=38+((k*23+slot*7+sub*4)%90);d.stroke(7+(k%2)*9,sy,43+k%3*14,sy,C.foam);}
       if([2,3,6,7,8,9,13].includes(slot))for(let k=0;k<6;k++)d.stroke(x-45-k*5,FLOOR-12-k*5+y,x-20,FLOOR-14-k*5+y,k%2?C.cyan:C.cloud);
     }
-    if(ghosts&&slot>0&&slot<15){blit(f.pixels,poses[Math.max(0,i-1)],source.width,source.height,x-19-intensity*3,FLOOR+y+3,scale,.2);blit(f.pixels,poses[i],source.width,source.height,x-10-intensity,FLOOR+y+1,scale,.25);}
+    if(ghosts&&slot>0&&slot<15){blit(character,poses[Math.max(0,i-1)],source.width,source.height,x-19-intensity*3,FLOOR+y+3,scale,.2);blit(character,poses[i],source.width,source.height,x-10-intensity,FLOOR+y+1,scale,.25);}
     const pose=slot===15?poses[0]:poses[i];
-    blit(f.pixels,pose,source.width,source.height,x,FLOOR+y,scale);
+    blit(character,pose,source.width,source.height,x,FLOOR+y,scale);
     if(effects){
       if(impact&&slot!==10&&slot!==13)burst(f.pixels,190+sub*4,slot===4?79:slot===7||slot===8?91:104,sub,intensity);
       if(slot===10){d.ellipse(x,FLOOR,18+sub*12,3+sub*2,C.cyan,true);d.ellipse(x,FLOOR,12+sub*10,2+sub*2,C.white,true);for(let k=0;k<9;k++)d.stroke(x-39+k*10,FLOOR-2,x-44+k*11,FLOOR-10-(k%3)*4,C.foam,2);}
-      if(slot===12){d.ellipse(x+14,113,5+sub*2,6+sub*2,C.cyan,true);d.ellipse(x+14,113,3+sub,C.white);}
-      if(slot===13){d.ellipse(x+31,104,10,11,C.cyan);d.rect(x+30,99,W-x-30,11,C.cyan);d.rect(x+31,103,W-x-31,3,C.white);burst(f.pixels,207,103,sub,intensity);}
+
     }
+    if(beam&&slot===12){d.ellipse(x+14,113,5+sub*2,6+sub*2,C.cyan,true);d.ellipse(x+14,113,3+sub,C.white);}
+    if(beam&&slot===13){d.ellipse(x+31,104,10,11,C.cyan);d.rect(x+30,99,W-x-30,11,C.cyan);d.rect(x+31,103,W-x-31,3,C.white);burst(f.pixels,207,103,sub,intensity);}
     const shaking=camera&&impact&&sub<2,dx=shaking?(sub%2?intensity:-intensity):0,dy=shaking?(sub%2?-1:1):0;
-    f.pixels=shake(f.pixels,dx,dy);
+    f.scenePixels=shake(f.pixels,dx,dy);
+    f.pixels=shake(character,dx,dy,false);
     f.duration=slot===0?[100,60,40,40][sub]:slot===15?[60,80,110,150][sub]:impact&&sub===1?70:40;
     frames.push(f);
   }
-  const palette=makePalette(frames.map(f=>f.pixels),96);
-  for(const f of frames)f.pixels=quantize(f.pixels,W,H,palette,'none');
+  const palette=makePalette(frames.flatMap(f=>[f.pixels,f.scenePixels]),96);
+  for(const f of frames){f.pixels=quantize(f.pixels,W,H,palette,'none');f.scenePixels=quantize(f.scenePixels,W,H,palette,'none');}
   return {name:(source.name.replace(/[-_ ]?(poses|ポーズ)$/i,'')+' · ACTION').slice(0,80),width:W,height:H,palette,frames};
 }

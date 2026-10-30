@@ -215,6 +215,8 @@
 .control-guide>div{display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
 .control-guide dt{font-weight:600}
 .control-guide dd{margin:0;color:#66775b}
+.export-scene{display:flex;align-items:center;gap:8px;margin:0 0 16px;color:var(--ink)}
+.export-scene input{accent-color:var(--sage)}
 @media(max-width:1023px){
   .section-heading{margin-bottom:12px!important}
   .section-heading h2{font-size:18px}
